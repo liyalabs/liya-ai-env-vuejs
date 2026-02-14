@@ -1,0 +1,183 @@
+/* Liya AI Environment - Liquid Glass Effects */
+
+/* Base glass effect */
+.liya-ai-env-vuejs-glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Glass card variant */
+.liya-ai-env-vuejs-glass-card {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 24px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Glass button */
+.liya-ai-env-vuejs-glass-button {
+  background: rgba(99, 102, 241, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-glass-button:hover {
+  background: rgba(99, 102, 241, 0.35);
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+}
+
+.liya-ai-env-vuejs-glass-button:active {
+  transform: scale(0.98);
+}
+
+/* Glass overlay for modal */
+.liya-ai-env-vuejs-glass-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* Glass panel */
+.liya-ai-env-vuejs-glass-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0.05) 100%
+  );
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.37),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Subtle glow effect */
+.liya-ai-env-vuejs-glow {
+  box-shadow: 
+    0 0 20px rgba(99, 102, 241, 0.3),
+    0 0 40px rgba(99, 102, 241, 0.1);
+}
+
+/* Primary gradient button */
+.liya-ai-env-vuejs-gradient-button {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.liya-ai-env-vuejs-gradient-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.liya-ai-env-vuejs-gradient-button:active {
+  transform: scale(0.98);
+}
+
+.liya-ai-env-vuejs-gradient-button--recording {
+  background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+  animation: liya-ai-env-vuejs-pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes liya-ai-env-vuejs-pulse-recording {
+  0%, 100% { box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); }
+  50% { box-shadow: 0 4px 30px rgba(239, 68, 68, 0.6); }
+}
+
+/* Status indicator */
+.liya-ai-env-vuejs-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.liya-ai-env-vuejs-status-dot--speaking {
+  animation: liya-ai-env-vuejs-pulse-status 1s ease-in-out infinite;
+}
+
+@keyframes liya-ai-env-vuejs-pulse-status {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+}
+
+/* Thinking dots animation */
+.liya-ai-env-vuejs-thinking-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.liya-ai-env-vuejs-thinking-dot {
+  width: 8px;
+  height: 8px;
+  background: #6366f1;
+  border-radius: 50%;
+  animation: liya-ai-env-vuejs-bounce 1.4s infinite ease-in-out both;
+}
+
+.liya-ai-env-vuejs-thinking-dot:nth-child(1) { animation-delay: -0.32s; }
+.liya-ai-env-vuejs-thinking-dot:nth-child(2) { animation-delay: -0.16s; }
+
+@keyframes liya-ai-env-vuejs-bounce {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+/* Fade transitions */
+.liya-ai-env-vuejs-fade-enter-active,
+.liya-ai-env-vuejs-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.liya-ai-env-vuejs-fade-enter-from,
+.liya-ai-env-vuejs-fade-leave-to {
+  opacity: 0;
+}
+
+/* Scale fade transitions */
+.liya-ai-env-vuejs-scale-fade-enter-active,
+.liya-ai-env-vuejs-scale-fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-scale-fade-enter-from,
+.liya-ai-env-vuejs-scale-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Slide up transitions */
+.liya-ai-env-vuejs-slide-up-enter-active,
+.liya-ai-env-vuejs-slide-up-leave-active {
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-slide-up-enter-from,
+.liya-ai-env-vuejs-slide-up-leave-to {
+  opacity: 0;
+  transform: translateY(20px);
+}
