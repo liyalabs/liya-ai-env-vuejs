@@ -1018,6 +1018,11 @@ onUnmounted(() => {
   height: 100%;
   position: relative;
   overflow: hidden;
+  pointer-events: none;
+}
+
+.liya-ai-env-vuejs-classroom-scene :deep(canvas) {
+  pointer-events: none;
 }
 
 .liya-ai-env-vuejs-loading {

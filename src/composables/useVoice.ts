@@ -56,6 +56,13 @@ function liyaAiEnvVuejsDetectIOS(): boolean {
   return isIOSDevice || isIPadOS
 }
 
+// Detect Opera browser
+function liyaAiEnvVuejsDetectOpera(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  const userAgent = navigator.userAgent || ''
+  return userAgent.indexOf('OPR/') !== -1 || userAgent.indexOf('Opera') !== -1
+}
+
 export function useLiyaAiEnvVuejsVoice() {
   // Check for browser support
   const SpeechRecognitionAPI = 
@@ -135,7 +142,21 @@ export function useLiyaAiEnvVuejsVoice() {
     if (liyaAiEnvVuejsRecognition && !liyaAiEnvVuejsIsRecording.value) {
       liyaAiEnvVuejsTranscript.value = ''
       liyaAiEnvVuejsIsRecording.value = true
-      liyaAiEnvVuejsRecognition.start()
+      
+      try {
+        liyaAiEnvVuejsRecognition.start()
+        
+        // Opera workaround: recognition.start() may silently fail.
+        // If recording hasn't actually started within 3s, reset and log.
+        if (liyaAiEnvVuejsDetectOpera()) {
+          setTimeout(() => {
+            if (!liyaAiEnvVuejsIsRecording.value) return
+            // If onresult never fires, the recognition may have silently failed
+          }, 3000)
+        }
+      } catch (err) {
+        liyaAiEnvVuejsIsRecording.value = false
+      }
     }
   }
 

@@ -1020,7 +1020,8 @@ onUnmounted(() => {
   align-items: center;
   gap: 14px;
   background: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 100%);
-  z-index: 5;
+  z-index: 10;
+  pointer-events: auto;
 }
 
 .liya-ai-env-vuejs-controls__mic {
@@ -1036,6 +1037,8 @@ onUnmounted(() => {
   justify-content: center;
   transition: all 0.3s ease;
   box-shadow: 0 4px 20px rgba(99, 102, 241, 0.4);
+  position: relative;
+  z-index: 10;
 }
 
 .liya-ai-env-vuejs-controls__mic svg {
