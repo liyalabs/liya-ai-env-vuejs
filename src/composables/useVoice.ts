@@ -69,9 +69,10 @@ export function useLiyaAiEnvVuejsVoice() {
     (window as unknown as { SpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).SpeechRecognition ||
     (window as unknown as { webkitSpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).webkitSpeechRecognition
 
-  // iOS Safari does NOT support SpeechRecognition API
+  // iOS Safari and Opera do NOT reliably support SpeechRecognition API
   liyaAiEnvVuejsIsIOS.value = liyaAiEnvVuejsDetectIOS()
-  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI && !liyaAiEnvVuejsIsIOS.value
+  const liyaAiEnvVuejsIsOpera = liyaAiEnvVuejsDetectOpera()
+  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI && !liyaAiEnvVuejsIsIOS.value && !liyaAiEnvVuejsIsOpera
 
   // Check current microphone permission status
   async function liyaAiEnvVuejsCheckMicPermission(): Promise<'prompt' | 'granted' | 'denied'> {
