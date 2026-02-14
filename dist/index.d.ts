@@ -645,11 +645,10 @@ export declare function useLiyaAiEnvVuejsAudioAnalyzer(): {
     readonly buffer: {
     readonly byteLength: number;
     slice: (begin?: number, end?: number) => ArrayBuffer;
-    readonly [Symbol.toStringTag]: string;
+    readonly [Symbol.toStringTag]: "ArrayBuffer";
     } | {
     readonly byteLength: number;
     slice: (begin?: number, end?: number) => SharedArrayBuffer;
-    readonly [Symbol.species]: SharedArrayBuffer;
     readonly [Symbol.toStringTag]: "SharedArrayBuffer";
     };
     readonly byteLength: number;

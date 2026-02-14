@@ -120,6 +120,12 @@ const liyaAiEnvVuejsAccessErrorMessage = computed(() => {
   return liyaAiEnvVuejsT.value.premium.upgradePremium
 })
 
+// Ensure URL uses HTTPS for security (Mixed Content fix)
+function liyaAiEnvVuejsEnsureHttps(url: string): string {
+  if (!url) return url
+  return url.replace(/^http:\/\//i, 'https://')
+}
+
 // Default welcome suggestions (reactive, from i18n)
 const LIYA_AI_ENV_VUEJS_WELCOME_SUGGESTIONS = computed(() => liyaAiEnvVuejsT.value.welcomeSuggestions)
 
@@ -374,7 +380,7 @@ async function liyaAiEnvVuejsLoadAvatarModel(): Promise<void> {
   liyaAiEnvVuejsIsLoadingAvatar.value = true
   try {
     const response = await liyaAiEnvVuejsGetAvatarModel()
-    liyaAiEnvVuejsAvatarModelUrl.value = response.model_url
+    liyaAiEnvVuejsAvatarModelUrl.value = liyaAiEnvVuejsEnsureHttps(response.model_url)
   } catch (error) { /* avatar model not available */ } finally {
     liyaAiEnvVuejsIsLoadingAvatar.value = false
   }
@@ -386,7 +392,7 @@ async function liyaAiEnvVuejsLoadSceneBackground(): Promise<void> {
   
   try {
     const response = await liyaAiEnvVuejsGetSceneBackground()
-    liyaAiEnvVuejsSceneModelUrl.value = response.model_url
+    liyaAiEnvVuejsSceneModelUrl.value = liyaAiEnvVuejsEnsureHttps(response.model_url)
   } catch (error) { /* will use default programmatic environment as fallback */ }
 }
 

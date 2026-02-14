@@ -77,6 +77,12 @@ function liyaAiEnvVuejsToggleLocale(): void {
   liyaAiEnvVuejsSetLocale(newLocale)
 }
 
+// Ensure URL uses HTTPS for security (Mixed Content fix)
+function liyaAiEnvVuejsEnsureHttps(url: string): string {
+  if (!url) return url
+  return url.replace(/^http:\/\//i, 'https://')
+}
+
 const {
   isRecording,
   transcript,
@@ -147,7 +153,7 @@ async function liyaAiEnvVuejsLoadAvatarModel(): Promise<void> {
   
   try {
     const response = await liyaAiEnvVuejsGetAvatarModel()
-    liyaAiEnvVuejsAvatarModelUrl.value = response.model_url
+    liyaAiEnvVuejsAvatarModelUrl.value = liyaAiEnvVuejsEnsureHttps(response.model_url)
   } catch (error) { /* avatar model not available */ }
 }
 
@@ -156,7 +162,7 @@ async function liyaAiEnvVuejsLoadSceneBackground(): Promise<void> {
   
   try {
     const response = await liyaAiEnvVuejsGetSceneBackground()
-    liyaAiEnvVuejsSceneModelUrl.value = response.model_url
+    liyaAiEnvVuejsSceneModelUrl.value = liyaAiEnvVuejsEnsureHttps(response.model_url)
   } catch (error) { /* scene background not available */ }
 }
 
