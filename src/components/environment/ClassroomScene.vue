@@ -44,7 +44,10 @@ const props = withDefaults(defineProps<Props>(), {
 
 // Presentation board: when presentationResult is set, show page image on board
 const liyaAiEnvVuejsHasPresentation = computed(() => !!props.presentationResult?.page_image_url)
-const liyaAiEnvVuejsPresentationImageUrl = computed(() => props.presentationResult?.page_image_url || '')
+const liyaAiEnvVuejsPresentationImageUrl = computed(() => {
+  const url = props.presentationResult?.page_image_url || ''
+  return url.replace(/^http:\/\//i, 'https://')
+})
 const liyaAiEnvVuejsPresentationInfo = computed(() => {
   if (!props.presentationResult) return ''
   return `${props.presentationResult.presentation_title} — ${props.presentationResult.page_number}/${props.presentationResult.total_pages}`

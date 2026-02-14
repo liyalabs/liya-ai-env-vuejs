@@ -20594,8 +20594,8 @@ const Lx = { class: "liya-ai-env-vuejs-full-body-avatar" }, Px = /* @__PURE__ */
       var ue;
       return !!((ue = t.presentationResult) != null && ue.page_image_url);
     }), i = Fe(() => {
-      var ue;
-      return ((ue = t.presentationResult) == null ? void 0 : ue.page_image_url) || "";
+      var x;
+      return (((x = t.presentationResult) == null ? void 0 : x.page_image_url) || "").replace(/^http:\/\//i, "https://");
     }), r = Fe(() => t.presentationResult ? `${t.presentationResult.presentation_title} — ${t.presentationResult.page_number}/${t.presentationResult.total_pages}` : ""), o = e, { getCurrentKeyframe: a, setGesturesFromApi: l } = Vh(), c = Ke(null), u = Ke(!0), h = Ke(0);
     let d = null, m = null, g = null, _ = null, f = null, p = null, E = null, y = null, T = [], R = {}, b = null, w = null, G = null, S = null, A = null, V = null, J = 0, se = !1, C = 0, P = 3e3, U = { x: 0, y: 0 }, X = { x: 0, y: 0 }, O = 0, $ = 2e3, Z = 0;
     const z = {
@@ -21030,7 +21030,7 @@ const Lx = { class: "liya-ai-env-vuejs-full-body-avatar" }, Px = /* @__PURE__ */
       ])) : en("", !0)
     ], 512));
   }
-}), zh = /* @__PURE__ */ po(Fx, [["__scopeId", "data-v-acbabd8c"]]), Qe = Ke({
+}), zh = /* @__PURE__ */ po(Fx, [["__scopeId", "data-v-228a7272"]]), Qe = Ke({
   isOpen: !1,
   isLoading: !0,
   isReady: !1,
