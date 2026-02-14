@@ -91,6 +91,15 @@ const {
   stopRecording
 } = useLiyaAiEnvVuejsVoice()
 
+// Voice not supported toast (for iOS)
+const liyaAiEnvVuejsVoiceNotSupportedVisible = ref(false)
+function liyaAiEnvVuejsShowVoiceNotSupported(): void {
+  liyaAiEnvVuejsVoiceNotSupportedVisible.value = true
+  setTimeout(() => {
+    liyaAiEnvVuejsVoiceNotSupportedVisible.value = false
+  }, 3000)
+}
+
 // Resolved props with i18n fallbacks
 const liyaAiEnvVuejsResolvedWelcome = computed(() => props.welcomeMessage || liyaAiEnvVuejsT.value.chat.emptyWelcome)
 const liyaAiEnvVuejsResolvedName = computed(() => props.assistantName || 'AI Assistant')
@@ -221,6 +230,12 @@ async function liyaAiEnvVuejsHandleSendMessage(message: string): Promise<void> {
 }
 
 function liyaAiEnvVuejsToggleListening(): void {
+  // Show toast if voice not supported (iOS Safari)
+  if (!isVoiceSupported.value) {
+    liyaAiEnvVuejsShowVoiceNotSupported()
+    return
+  }
+  
   if (isRecording.value) {
     stopRecording()
     setListening(false)
@@ -350,11 +365,11 @@ onUnmounted(() => {
         <!-- Controls -->
         <div class="liya-ai-env-vuejs-controls">
           <button
-            v-if="isVoiceSupported"
             class="liya-ai-env-vuejs-controls__mic"
             :class="{
               'liya-ai-env-vuejs-controls__mic--active': isRecording,
-              'liya-ai-env-vuejs-controls__mic--disabled': isProcessing || isSpeaking
+              'liya-ai-env-vuejs-controls__mic--disabled': isProcessing || isSpeaking,
+              'liya-ai-env-vuejs-controls__mic--not-supported': !isVoiceSupported
             }"
             :disabled="isProcessing || isSpeaking"
             @click="liyaAiEnvVuejsToggleListening"
@@ -371,6 +386,19 @@ onUnmounted(() => {
           <p class="liya-ai-env-vuejs-controls__hint">
             {{ isRecording ? liyaAiEnvVuejsT.voice.listening : isProcessing ? liyaAiEnvVuejsT.voice.thinking : liyaAiEnvVuejsT.voice.pressToSpeak }}
           </p>
+          
+          <!-- Voice Not Supported Toast (iOS) -->
+          <Transition name="liya-ai-env-vuejs-toast">
+            <div 
+              v-if="liyaAiEnvVuejsVoiceNotSupportedVisible" 
+              class="liya-ai-env-vuejs-controls__toast"
+            >
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              <span>{{ liyaAiEnvVuejsT.voice.notSupported }}</span>
+            </div>
+          </Transition>
         </div>
       </template>
     </div>
@@ -586,6 +614,42 @@ onUnmounted(() => {
 .liya-ai-env-vuejs-controls__mic--disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.liya-ai-env-vuejs-controls__mic--not-supported {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 4px 20px rgba(107, 114, 128, 0.3);
+}
+
+.liya-ai-env-vuejs-controls__toast {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.liya-ai-env-vuejs-toast-enter-active,
+.liya-ai-env-vuejs-toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-toast-enter-from,
+.liya-ai-env-vuejs-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
 }
 
 .liya-ai-env-vuejs-controls__hint {

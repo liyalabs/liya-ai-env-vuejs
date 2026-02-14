@@ -93,8 +93,19 @@ const {
   transcript,
   isSupported: isVoiceSupported,
   startRecording,
-  stopRecording
+  stopRecording,
+  checkMicPermission,
+  requestMicPermission
 } = useLiyaAiEnvVuejsVoice()
+
+// Voice not supported toast (for iOS)
+const liyaAiEnvVuejsVoiceNotSupportedVisible = ref(false)
+function liyaAiEnvVuejsShowVoiceNotSupported(): void {
+  liyaAiEnvVuejsVoiceNotSupportedVisible.value = true
+  setTimeout(() => {
+    liyaAiEnvVuejsVoiceNotSupportedVisible.value = false
+  }, 3000)
+}
 
 // Resolved props with i18n fallbacks
 const liyaAiEnvVuejsResolvedWelcome = computed(() => props.welcomeMessage || liyaAiEnvVuejsT.value.chat.emptyWelcome)
@@ -135,6 +146,29 @@ const liyaAiEnvVuejsChatInput = ref('')
 // Debounce for button actions (3 seconds)
 const LIYA_AI_ENV_VUEJS_ACTION_DEBOUNCE_MS = 3000
 let liyaAiEnvVuejsLastActionTime = 0
+
+// Patience tooltip state (shown when user clicks too fast)
+const liyaAiEnvVuejsPatienceTooltipVisible = ref(false)
+const liyaAiEnvVuejsPatienceTooltipText = ref('')
+let liyaAiEnvVuejsPatienceTooltipTimer: ReturnType<typeof setTimeout> | null = null
+
+function liyaAiEnvVuejsShowPatienceTooltip(): void {
+  // Pick a random tooltip message
+  const tooltips = liyaAiEnvVuejsT.value.patienceTooltips
+  const randomIndex = Math.floor(Math.random() * tooltips.length)
+  liyaAiEnvVuejsPatienceTooltipText.value = tooltips[randomIndex]
+  liyaAiEnvVuejsPatienceTooltipVisible.value = true
+  
+  // Clear existing timer
+  if (liyaAiEnvVuejsPatienceTooltipTimer) {
+    clearTimeout(liyaAiEnvVuejsPatienceTooltipTimer)
+  }
+  
+  // Hide after 2 seconds
+  liyaAiEnvVuejsPatienceTooltipTimer = setTimeout(() => {
+    liyaAiEnvVuejsPatienceTooltipVisible.value = false
+  }, 2000)
+}
 
 // Status indicator
 type LiyaAiEnvVuejsStatus = 'idle' | 'listening' | 'preparing' | 'speaking'
@@ -183,7 +217,10 @@ const liyaAiEnvVuejsStatusText = computed(() => {
 // Cancel current action
 function liyaAiEnvVuejsCancelAction(): void {
   const now = Date.now()
-  if (now - liyaAiEnvVuejsLastActionTime < LIYA_AI_ENV_VUEJS_ACTION_DEBOUNCE_MS) return
+  if (now - liyaAiEnvVuejsLastActionTime < LIYA_AI_ENV_VUEJS_ACTION_DEBOUNCE_MS) {
+    liyaAiEnvVuejsShowPatienceTooltip()
+    return
+  }
   liyaAiEnvVuejsLastActionTime = now
   
   if (isRecording.value) {
@@ -196,7 +233,10 @@ function liyaAiEnvVuejsCancelAction(): void {
 // Refresh/replay last message from local state (no chat API call, only TTS)
 function liyaAiEnvVuejsRefreshAction(): void {
   const now = Date.now()
-  if (now - liyaAiEnvVuejsLastActionTime < LIYA_AI_ENV_VUEJS_ACTION_DEBOUNCE_MS) return
+  if (now - liyaAiEnvVuejsLastActionTime < LIYA_AI_ENV_VUEJS_ACTION_DEBOUNCE_MS) {
+    liyaAiEnvVuejsShowPatienceTooltip()
+    return
+  }
   liyaAiEnvVuejsLastActionTime = now
   
   // Stop any current speech first
@@ -451,6 +491,15 @@ async function liyaAiEnvVuejsLoadInitialPresentation(): Promise<void> {
 // Watch for open state: check access first, then load avatar model, then speak welcome
 watch(() => props.isOpen, async (open) => {
   if (open) {
+    // Request microphone permission early (before user clicks mic button)
+    if (isVoiceSupported.value) {
+      checkMicPermission().then(status => {
+        if (status === 'prompt') {
+          requestMicPermission()
+        }
+      })
+    }
+    
     await liyaAiEnvVuejsCheckAccess()
     if (!liyaAiEnvVuejsHasAccessError.value) {
       await Promise.all([
@@ -497,6 +546,12 @@ async function liyaAiEnvVuejsHandleSendMessage(message: string): Promise<void> {
 }
 
 function liyaAiEnvVuejsToggleListening(): void {
+  // Show toast if voice not supported (iOS Safari)
+  if (!isVoiceSupported.value) {
+    liyaAiEnvVuejsShowVoiceNotSupported()
+    return
+  }
+  
   if (isRecording.value) {
     stopRecording()
     setListening(false)
@@ -523,6 +578,16 @@ onMounted(() => {
 
 onUnmounted(() => {
   document.removeEventListener('keydown', liyaAiEnvVuejsHandleKeydown)
+  // Safari fix: Clear preparing timer to prevent memory leak
+  if (liyaAiEnvVuejsPreparingTimer) {
+    clearInterval(liyaAiEnvVuejsPreparingTimer)
+    liyaAiEnvVuejsPreparingTimer = null
+  }
+  // Clear patience tooltip timer
+  if (liyaAiEnvVuejsPatienceTooltipTimer) {
+    clearTimeout(liyaAiEnvVuejsPatienceTooltipTimer)
+    liyaAiEnvVuejsPatienceTooltipTimer = null
+  }
   cleanup()
 })
 </script>
@@ -665,17 +730,27 @@ onUnmounted(() => {
                     <path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>
                   </svg>
                 </button>
+                
+                <!-- Patience Tooltip (shown when clicking too fast) -->
+                <Transition name="liya-ai-env-vuejs-patience-tooltip">
+                  <div 
+                    v-if="liyaAiEnvVuejsPatienceTooltipVisible" 
+                    class="liya-ai-env-vuejs-patience-tooltip"
+                  >
+                    {{ liyaAiEnvVuejsPatienceTooltipText }}
+                  </div>
+                </Transition>
               </div>
 
               <!-- Controls - Bottom Center -->
               <div class="liya-ai-env-vuejs-controls">
                 <p class="liya-ai-env-vuejs-controls__label">{{ liyaAiEnvVuejsT.controls.pressAndSpeak }}</p>
                 <button
-                  v-if="isVoiceSupported"
                   class="liya-ai-env-vuejs-controls__mic"
                   :class="{
                     'liya-ai-env-vuejs-controls__mic--active': isRecording,
-                    'liya-ai-env-vuejs-controls__mic--disabled': isProcessing || isSpeaking
+                    'liya-ai-env-vuejs-controls__mic--disabled': isProcessing || isSpeaking,
+                    'liya-ai-env-vuejs-controls__mic--not-supported': !isVoiceSupported
                   }"
                   :disabled="isProcessing || isSpeaking"
                   @click="liyaAiEnvVuejsToggleListening"
@@ -689,6 +764,19 @@ onUnmounted(() => {
                     <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                   </svg>
                 </button>
+                
+                <!-- Voice Not Supported Toast (iOS) -->
+                <Transition name="liya-ai-env-vuejs-toast">
+                  <div 
+                    v-if="liyaAiEnvVuejsVoiceNotSupportedVisible" 
+                    class="liya-ai-env-vuejs-controls__toast"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                    <span>{{ liyaAiEnvVuejsT.voice.notSupported }}</span>
+                  </div>
+                </Transition>
               </div>
 
               <!-- Chat Panel - Bottom Right (Liquid Glass) -->
@@ -978,6 +1066,42 @@ onUnmounted(() => {
   cursor: not-allowed;
 }
 
+.liya-ai-env-vuejs-controls__mic--not-supported {
+  opacity: 0.6;
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+  box-shadow: 0 4px 20px rgba(107, 114, 128, 0.3);
+}
+
+.liya-ai-env-vuejs-controls__toast {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: rgba(239, 68, 68, 0.95);
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+  white-space: nowrap;
+}
+
+.liya-ai-env-vuejs-toast-enter-active,
+.liya-ai-env-vuejs-toast-leave-active {
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-toast-enter-from,
+.liya-ai-env-vuejs-toast-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(20px);
+}
+
 .liya-ai-env-vuejs-controls__label {
   color: rgba(255, 255, 255, 0.7);
   font-size: 14px;
@@ -1230,6 +1354,54 @@ onUnmounted(() => {
   background: rgba(99, 102, 241, 0.7);
   color: #fff;
   transform: scale(1.05);
+}
+
+/* Patience Tooltip */
+.liya-ai-env-vuejs-patience-tooltip {
+  position: absolute;
+  top: -50px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4);
+  z-index: 100;
+  animation: liya-ai-env-vuejs-tooltip-bounce 0.5s ease;
+}
+
+.liya-ai-env-vuejs-patience-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 8px 8px 0 8px;
+  border-style: solid;
+  border-color: #d97706 transparent transparent transparent;
+}
+
+@keyframes liya-ai-env-vuejs-tooltip-bounce {
+  0% { transform: translateX(-50%) scale(0.5) translateY(10px); opacity: 0; }
+  50% { transform: translateX(-50%) scale(1.1) translateY(-5px); }
+  100% { transform: translateX(-50%) scale(1) translateY(0); opacity: 1; }
+}
+
+.liya-ai-env-vuejs-patience-tooltip-enter-active {
+  animation: liya-ai-env-vuejs-tooltip-bounce 0.4s ease;
+}
+
+.liya-ai-env-vuejs-patience-tooltip-leave-active {
+  transition: all 0.2s ease;
+}
+
+.liya-ai-env-vuejs-patience-tooltip-leave-to {
+  opacity: 0;
+  transform: translateX(-50%) translateY(-10px);
 }
 
 /* Transitions */

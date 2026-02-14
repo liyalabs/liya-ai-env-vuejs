@@ -21,8 +21,15 @@ export function useLiyaAiEnvVuejsAudioAnalyzer() {
       // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
 
-      // Create audio context and analyzer
-      liyaAiEnvVuejsAnalyzerContext = new AudioContext()
+      // Create audio context and analyzer (iOS compatible)
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+      liyaAiEnvVuejsAnalyzerContext = new AudioContextClass()
+      
+      // iOS requires resume() after user interaction
+      if (liyaAiEnvVuejsAnalyzerContext.state === 'suspended') {
+        await liyaAiEnvVuejsAnalyzerContext.resume()
+      }
+      
       liyaAiEnvVuejsAnalyzerNode = liyaAiEnvVuejsAnalyzerContext.createAnalyser()
       liyaAiEnvVuejsAnalyzerNode.fftSize = 256
       liyaAiEnvVuejsAnalyzerNode.smoothingTimeConstant = 0.8

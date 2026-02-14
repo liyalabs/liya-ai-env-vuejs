@@ -38,8 +38,23 @@ type LiyaAiEnvVuejsSpeechRecognitionConstructor = new () => LiyaAiEnvVuejsSpeech
 const liyaAiEnvVuejsIsRecording = ref(false)
 const liyaAiEnvVuejsTranscript = ref('')
 const liyaAiEnvVuejsIsSupported = ref(false)
+const liyaAiEnvVuejsIsIOS = ref(false)
+const liyaAiEnvVuejsMicPermission = ref<'prompt' | 'granted' | 'denied'>('prompt')
 
 let liyaAiEnvVuejsRecognition: LiyaAiEnvVuejsSpeechRecognition | null = null
+
+// Detect iOS device
+function liyaAiEnvVuejsDetectIOS(): boolean {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined') return false
+  
+  const userAgent = navigator.userAgent || (navigator as any).vendor || ''
+  // Check for iOS devices (iPhone, iPad, iPod)
+  const isIOSDevice = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream
+  // Also check for iPad on iOS 13+ which reports as Mac
+  const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1
+  
+  return isIOSDevice || isIPadOS
+}
 
 export function useLiyaAiEnvVuejsVoice() {
   // Check for browser support
@@ -47,7 +62,44 @@ export function useLiyaAiEnvVuejsVoice() {
     (window as unknown as { SpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).SpeechRecognition ||
     (window as unknown as { webkitSpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).webkitSpeechRecognition
 
-  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI
+  // iOS Safari does NOT support SpeechRecognition API
+  liyaAiEnvVuejsIsIOS.value = liyaAiEnvVuejsDetectIOS()
+  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI && !liyaAiEnvVuejsIsIOS.value
+
+  // Check current microphone permission status
+  async function liyaAiEnvVuejsCheckMicPermission(): Promise<'prompt' | 'granted' | 'denied'> {
+    if (typeof navigator === 'undefined' || !navigator.permissions) {
+      return 'prompt'
+    }
+    try {
+      const result = await navigator.permissions.query({ name: 'microphone' as PermissionName })
+      liyaAiEnvVuejsMicPermission.value = result.state as 'prompt' | 'granted' | 'denied'
+      // Listen for permission changes
+      result.onchange = () => {
+        liyaAiEnvVuejsMicPermission.value = result.state as 'prompt' | 'granted' | 'denied'
+      }
+      return result.state as 'prompt' | 'granted' | 'denied'
+    } catch {
+      return 'prompt'
+    }
+  }
+
+  // Request microphone permission early (on widget open)
+  async function liyaAiEnvVuejsRequestMicPermission(): Promise<boolean> {
+    if (!liyaAiEnvVuejsIsSupported.value) {
+      return false
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      // Stop all tracks immediately - we just wanted the permission
+      stream.getTracks().forEach(track => track.stop())
+      liyaAiEnvVuejsMicPermission.value = 'granted'
+      return true
+    } catch {
+      liyaAiEnvVuejsMicPermission.value = 'denied'
+      return false
+    }
+  }
 
   function liyaAiEnvVuejsInitRecognition(): void {
     if (!SpeechRecognitionAPI || liyaAiEnvVuejsRecognition) return
@@ -115,9 +167,13 @@ export function useLiyaAiEnvVuejsVoice() {
     isRecording: computed(() => liyaAiEnvVuejsIsRecording.value),
     transcript: computed(() => liyaAiEnvVuejsTranscript.value),
     isSupported: computed(() => liyaAiEnvVuejsIsSupported.value),
+    isIOS: computed(() => liyaAiEnvVuejsIsIOS.value),
+    micPermission: computed(() => liyaAiEnvVuejsMicPermission.value),
     startRecording: liyaAiEnvVuejsStartRecording,
     stopRecording: liyaAiEnvVuejsStopRecording,
     setLanguage: liyaAiEnvVuejsSetLanguage,
+    checkMicPermission: liyaAiEnvVuejsCheckMicPermission,
+    requestMicPermission: liyaAiEnvVuejsRequestMicPermission,
     cleanup: liyaAiEnvVuejsCleanup
   }
 }

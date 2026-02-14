@@ -30,9 +30,73 @@ const liyaAiEnvVuejsAudioCurrentTime = ref(0)
 const liyaAiEnvVuejsCurrentPresentation = ref<LiyaAiEnvVuejsPresentationResult | null>(null)
 const liyaAiEnvVuejsLastApiErrorCode = ref<string | null>(null)
 
-let liyaAiEnvVuejsAudioContext: AudioContext | null = null
 let liyaAiEnvVuejsAudioSource: AudioBufferSourceNode | null = null
 let liyaAiEnvVuejsStartTime = 0
+let liyaAiEnvVuejsAudioSafetyTimeout: ReturnType<typeof setTimeout> | null = null
+let liyaAiEnvVuejsContextCreationAttempts = 0
+const LIYA_AI_ENV_VUEJS_MAX_CONTEXT_ATTEMPTS = 3
+
+// Global AudioContext - stored on window to share across ALL component instances
+// This is critical for Safari which has issues with creating new contexts
+declare global {
+  interface Window {
+    __liyaAiEnvAudioContext?: AudioContext
+  }
+}
+
+// iOS/Safari AudioContext helper - must be called after user interaction
+async function liyaAiEnvVuejsEnsureAudioContext(): Promise<AudioContext | null> {
+  // Check if global context exists on window and is usable
+  const existingContext = window.__liyaAiEnvAudioContext
+  if (existingContext && existingContext.state !== 'closed') {
+    // If running, return immediately
+    if (existingContext.state === 'running') {
+      return existingContext
+    }
+    
+    // If suspended, try to resume with shorter timeout for Safari
+    if (existingContext.state === 'suspended') {
+      try {
+        const resumePromise = existingContext.resume()
+        const timeoutPromise = new Promise<void>((_, reject) => 
+          setTimeout(() => reject(new Error('AudioContext resume timeout')), 2000)
+        )
+        await Promise.race([resumePromise, timeoutPromise])
+      } catch (err) {
+        // Safari fix: If resume fails, continue with suspended context
+        // Audio may still work on next user interaction
+      }
+    }
+    
+    return existingContext
+  }
+  
+  // Safari fix: Limit context creation attempts to prevent memory leak
+  if (liyaAiEnvVuejsContextCreationAttempts >= LIYA_AI_ENV_VUEJS_MAX_CONTEXT_ATTEMPTS) {
+    console.warn('[LiyaAiEnv] Max AudioContext creation attempts reached')
+    return null
+  }
+  
+  // Create new global context on window
+  liyaAiEnvVuejsContextCreationAttempts++
+  const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext
+  window.__liyaAiEnvAudioContext = new AudioContextClass()
+  
+  // Try to resume if suspended
+  if (window.__liyaAiEnvAudioContext.state === 'suspended') {
+    try {
+      const resumePromise = window.__liyaAiEnvAudioContext.resume()
+      const timeoutPromise = new Promise<void>((_, reject) => 
+        setTimeout(() => reject(new Error('AudioContext resume timeout')), 2000)
+      )
+      await Promise.race([resumePromise, timeoutPromise])
+    } catch (err) {
+      // Continue with suspended AudioContext
+    }
+  }
+  
+  return window.__liyaAiEnvAudioContext
+}
 
 export function useLiyaAiEnvVuejsEnvironment() {
   // Computed properties
@@ -251,42 +315,70 @@ export function useLiyaAiEnvVuejsEnvironment() {
 
   async function liyaAiEnvVuejsPlayAudioWithSync(base64Audio: string): Promise<void> {
     try {
-      // Decode base64 audio
+      // Decode base64 audio - iOS compatible method
       const binaryString = atob(base64Audio)
-      const bytes = new Uint8Array(binaryString.length)
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i)
+      const len = binaryString.length
+      const arrayBuffer = new ArrayBuffer(len)
+      const uint8Array = new Uint8Array(arrayBuffer)
+      for (let i = 0; i < len; i++) {
+        uint8Array[i] = binaryString.charCodeAt(i)
       }
 
-      // Create audio context
-      if (!liyaAiEnvVuejsAudioContext) {
-        liyaAiEnvVuejsAudioContext = new AudioContext()
+      // Ensure AudioContext is ready (iOS/Safari fix)
+      const ctx = await liyaAiEnvVuejsEnsureAudioContext()
+      
+      // Safari fix: If context creation failed, fallback to simulation
+      if (!ctx) {
+        liyaAiEnvVuejsSimulateSpeaking(base64Audio.substring(0, 100))
+        return
       }
 
-      // Decode audio data
-      const audioBuffer = await liyaAiEnvVuejsAudioContext.decodeAudioData(bytes.buffer)
+      // Decode audio data - iOS Safari requires callback-based API
+      const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+        ctx.decodeAudioData(
+          arrayBuffer,
+          (buffer) => resolve(buffer),
+          (error) => reject(error || new Error('Audio decode failed'))
+        )
+      })
 
       // Stop any existing audio
       liyaAiEnvVuejsStopAudio()
 
       // Create and play audio source
-      liyaAiEnvVuejsAudioSource = liyaAiEnvVuejsAudioContext.createBufferSource()
+      liyaAiEnvVuejsAudioSource = ctx.createBufferSource()
       liyaAiEnvVuejsAudioSource.buffer = audioBuffer
-      liyaAiEnvVuejsAudioSource.connect(liyaAiEnvVuejsAudioContext.destination)
+      liyaAiEnvVuejsAudioSource.connect(ctx.destination)
 
       liyaAiEnvVuejsState.value.isSpeaking = true
-      liyaAiEnvVuejsStartTime = liyaAiEnvVuejsAudioContext.currentTime
+      liyaAiEnvVuejsStartTime = ctx.currentTime
 
       // Update current time for viseme sync
       const updateTime = () => {
-        if (liyaAiEnvVuejsState.value.isSpeaking && liyaAiEnvVuejsAudioContext) {
-          liyaAiEnvVuejsAudioCurrentTime.value = liyaAiEnvVuejsAudioContext.currentTime - liyaAiEnvVuejsStartTime
+        if (liyaAiEnvVuejsState.value.isSpeaking && ctx) {
+          liyaAiEnvVuejsAudioCurrentTime.value = ctx.currentTime - liyaAiEnvVuejsStartTime
           requestAnimationFrame(updateTime)
         }
       }
       updateTime()
 
+      // Safari fix: Safety timeout - onended sometimes doesn't fire in Safari
+      const audioDurationMs = audioBuffer.duration * 1000
+      liyaAiEnvVuejsAudioSafetyTimeout = setTimeout(() => {
+        if (liyaAiEnvVuejsState.value.isSpeaking) {
+          liyaAiEnvVuejsState.value.isSpeaking = false
+          liyaAiEnvVuejsAudioCurrentTime.value = 0
+          liyaAiEnvVuejsCurrentVisemes.value = []
+          liyaAiEnvVuejsCurrentGestures.value = []
+        }
+      }, audioDurationMs + 500)
+
       liyaAiEnvVuejsAudioSource.onended = () => {
+        // Clear safety timeout since onended fired properly
+        if (liyaAiEnvVuejsAudioSafetyTimeout) {
+          clearTimeout(liyaAiEnvVuejsAudioSafetyTimeout)
+          liyaAiEnvVuejsAudioSafetyTimeout = null
+        }
         liyaAiEnvVuejsState.value.isSpeaking = false
         liyaAiEnvVuejsAudioCurrentTime.value = 0
         liyaAiEnvVuejsCurrentVisemes.value = []
@@ -336,6 +428,12 @@ export function useLiyaAiEnvVuejsEnvironment() {
   }
 
   function liyaAiEnvVuejsStopAudio(): void {
+    // Clear safety timeout
+    if (liyaAiEnvVuejsAudioSafetyTimeout) {
+      clearTimeout(liyaAiEnvVuejsAudioSafetyTimeout)
+      liyaAiEnvVuejsAudioSafetyTimeout = null
+    }
+    
     if (liyaAiEnvVuejsAudioSource) {
       try {
         liyaAiEnvVuejsAudioSource.stop()
@@ -376,9 +474,16 @@ export function useLiyaAiEnvVuejsEnvironment() {
 
   function liyaAiEnvVuejsCleanup(): void {
     liyaAiEnvVuejsStopAudio()
-    if (liyaAiEnvVuejsAudioContext) {
-      liyaAiEnvVuejsAudioContext.close()
-      liyaAiEnvVuejsAudioContext = null
+    // Don't close AudioContext - Safari has issues creating new ones after close
+    // Just stop the audio source, context will be garbage collected
+    if (liyaAiEnvVuejsAudioSource) {
+      try {
+        liyaAiEnvVuejsAudioSource.stop()
+        liyaAiEnvVuejsAudioSource.disconnect()
+      } catch (e) {
+        // Ignore
+      }
+      liyaAiEnvVuejsAudioSource = null
     }
   }
 

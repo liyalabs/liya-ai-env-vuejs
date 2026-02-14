@@ -90,7 +90,12 @@ let liyaAiEnvVuejsRightShoulderBone: THREE.Object3D | null = null
 let liyaAiEnvVuejsLeftHandBone: THREE.Object3D | null = null
 let liyaAiEnvVuejsRightHandBone: THREE.Object3D | null = null
 
+// Safari detection for performance optimizations
+const liyaAiEnvVuejsIsSafari = typeof navigator !== 'undefined' && 
+  /^((?!chrome|android).)*safari/i.test(navigator.userAgent)
+
 // Animation state
+let liyaAiEnvVuejsIsAnimating = false
 let liyaAiEnvVuejsLastBlinkTime = 0
 let liyaAiEnvVuejsIsBlinking = false
 let liyaAiEnvVuejsBlinkProgress = 0
@@ -148,20 +153,25 @@ function liyaAiEnvVuejsInitScene(): void {
   liyaAiEnvVuejsCamera.position.set(position.x, position.y, position.z)
   liyaAiEnvVuejsCamera.lookAt(lookAt.x, lookAt.y, lookAt.z)
 
-  // Renderer
+  // Renderer - Safari optimizations applied
   liyaAiEnvVuejsRenderer = new THREE.WebGLRenderer({ 
-    antialias: true,
-    alpha: true
+    antialias: !liyaAiEnvVuejsIsSafari, // Safari: disable antialiasing for performance
+    alpha: true,
+    powerPreference: liyaAiEnvVuejsIsSafari ? 'low-power' : 'high-performance',
+    preserveDrawingBuffer: liyaAiEnvVuejsIsSafari // Safari: required for WebGL stability
   })
   liyaAiEnvVuejsRenderer.setSize(
     liyaAiEnvVuejsContainerRef.value.clientWidth,
     liyaAiEnvVuejsContainerRef.value.clientHeight
   )
-  liyaAiEnvVuejsRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  // Safari fix: Lower pixel ratio to reduce GPU load (Retina can be 3x)
+  const maxPixelRatio = liyaAiEnvVuejsIsSafari ? 1.5 : 2
+  liyaAiEnvVuejsRenderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio))
   liyaAiEnvVuejsRenderer.outputColorSpace = THREE.SRGBColorSpace
   liyaAiEnvVuejsRenderer.toneMapping = THREE.ACESFilmicToneMapping
   liyaAiEnvVuejsRenderer.toneMappingExposure = 1.2
-  liyaAiEnvVuejsRenderer.shadowMap.enabled = true
+  // Safari fix: Disable shadow maps for better performance
+  liyaAiEnvVuejsRenderer.shadowMap.enabled = !liyaAiEnvVuejsIsSafari
   liyaAiEnvVuejsRenderer.shadowMap.type = THREE.PCFSoftShadowMap
   liyaAiEnvVuejsContainerRef.value.appendChild(liyaAiEnvVuejsRenderer.domElement)
 
@@ -178,6 +188,7 @@ function liyaAiEnvVuejsInitScene(): void {
   window.addEventListener('resize', liyaAiEnvVuejsHandleResize)
 
   // Start animation loop
+  liyaAiEnvVuejsIsAnimating = true
   liyaAiEnvVuejsAnimate()
 }
 
@@ -704,6 +715,9 @@ function liyaAiEnvVuejsSetInitialArmPose(): void {
 }
 
 function liyaAiEnvVuejsAnimate(): void {
+  // Safari fix: Check if animation should continue before requesting next frame
+  if (!liyaAiEnvVuejsIsAnimating) return
+  
   liyaAiEnvVuejsAnimationFrameId = requestAnimationFrame(liyaAiEnvVuejsAnimate)
 
   if (!liyaAiEnvVuejsClock || !liyaAiEnvVuejsRenderer || !liyaAiEnvVuejsScene || !liyaAiEnvVuejsCamera) return
@@ -900,8 +914,12 @@ function liyaAiEnvVuejsHandleResize(): void {
 }
 
 function liyaAiEnvVuejsDispose(): void {
+  // Safari fix: Stop animation loop first
+  liyaAiEnvVuejsIsAnimating = false
+  
   if (liyaAiEnvVuejsAnimationFrameId) {
     cancelAnimationFrame(liyaAiEnvVuejsAnimationFrameId)
+    liyaAiEnvVuejsAnimationFrameId = null
   }
 
   window.removeEventListener('resize', liyaAiEnvVuejsHandleResize)
@@ -923,10 +941,34 @@ function liyaAiEnvVuejsDispose(): void {
   if (liyaAiEnvVuejsClassroomModel) disposeObject(liyaAiEnvVuejsClassroomModel)
   if (liyaAiEnvVuejsAvatarModel) disposeObject(liyaAiEnvVuejsAvatarModel)
 
-  liyaAiEnvVuejsRenderer?.dispose()
+  // Safari fix: Force WebGL context loss to free GPU memory
+  if (liyaAiEnvVuejsRenderer) {
+    liyaAiEnvVuejsRenderer.dispose()
+    liyaAiEnvVuejsRenderer.forceContextLoss()
+    
+    // Remove canvas from DOM
+    if (liyaAiEnvVuejsContainerRef.value && liyaAiEnvVuejsRenderer.domElement.parentNode === liyaAiEnvVuejsContainerRef.value) {
+      liyaAiEnvVuejsContainerRef.value.removeChild(liyaAiEnvVuejsRenderer.domElement)
+    }
+  }
+  
+  // Clear all references
   liyaAiEnvVuejsScene = null
   liyaAiEnvVuejsCamera = null
   liyaAiEnvVuejsRenderer = null
+  liyaAiEnvVuejsClassroomModel = null
+  liyaAiEnvVuejsAvatarModel = null
+  liyaAiEnvVuejsMixer = null
+  liyaAiEnvVuejsMorphTargetMeshes = []
+  liyaAiEnvVuejsCurrentMorphValues = {}
+  liyaAiEnvVuejsSpineBone = null
+  liyaAiEnvVuejsHeadBone = null
+  liyaAiEnvVuejsLeftShoulderRootBone = null
+  liyaAiEnvVuejsRightShoulderRootBone = null
+  liyaAiEnvVuejsLeftShoulderBone = null
+  liyaAiEnvVuejsRightShoulderBone = null
+  liyaAiEnvVuejsLeftHandBone = null
+  liyaAiEnvVuejsRightHandBone = null
 }
 
 onMounted(() => {

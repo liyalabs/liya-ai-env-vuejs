@@ -29,6 +29,7 @@ export interface LiyaAiEnvVuejsTranslations {
     listening: string
     thinking: string
     pressToSpeak: string
+    notSupported: string
   }
   // Controls
   controls: {
@@ -38,6 +39,8 @@ export interface LiyaAiEnvVuejsTranslations {
     replay: string
     pressAndSpeak: string
   }
+  // Patience tooltips (shown when user clicks too fast)
+  patienceTooltips: string[]
   // Premium overlay
   premium: {
     title: string
@@ -96,6 +99,7 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       listening: 'Dinliyorum...',
       thinking: 'Düşünüyorum...',
       pressToSpeak: 'Konuşmak için mikrofona basın',
+      notSupported: 'Ses tanıma bu tarayıcıda desteklenmiyor',
     },
     controls: {
       close: 'Kapat',
@@ -104,6 +108,16 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       replay: 'Tekrar Oynat',
       pressAndSpeak: 'Bas ve Konuş',
     },
+    patienceTooltips: [
+      'Sakin ol, çay demle ☕',
+      'Acele işe şeytan karışır! 😈',
+      'Biraz sabır, güzel şeyler geliyor... ✨',
+      'Yavaş yavaş, torba dolacak 🐢',
+      'Beklemek de bir sanattır 🎨',
+      'Nefes al, ver... 🧘',
+      'Roma bir günde kurulmadı! 🏛️',
+      'Sabır acıdır, meyvesi tatlıdır 🍎',
+    ],
     premium: {
       title: 'Premium Özellik',
       upgradePremium: 'Bu özelliği kullanmak için Premium veya Premium Plus abonelik gereklidir.',
@@ -157,6 +171,7 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       listening: 'Listening...',
       thinking: 'Thinking...',
       pressToSpeak: 'Press the microphone to speak',
+      notSupported: 'Voice recognition is not supported in this browser',
     },
     controls: {
       close: 'Close',
@@ -165,6 +180,16 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       replay: 'Replay',
       pressAndSpeak: 'Press & Speak',
     },
+    patienceTooltips: [
+      'Easy there, tiger! 🐯',
+      'Patience, young padawan... ✨',
+      'Good things come to those who wait ⏳',
+      'Take a deep breath... 🧘',
+      'Rome wasn\'t built in a day! 🏛️',
+      'Slow and steady wins the race 🐢',
+      'Chill out, grab a coffee ☕',
+      'The best things in life are worth waiting for 🌟',
+    ],
     premium: {
       title: 'Premium Feature',
       upgradePremium: 'A Premium or Premium Plus subscription is required to use this feature.',

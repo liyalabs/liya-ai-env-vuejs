@@ -204,9 +204,9 @@ export declare const LiyaAiEnvVuejsEnvironment: DefineComponent<Props, {}, {}, {
 error: (error: Error) => any;
 loaded: () => any;
 close: () => any;
+closed: () => any;
 back: () => any;
 opened: () => any;
-closed: () => any;
 "message-sent": (message: string) => any;
 "message-received": (message: string) => any;
 "speaking-started": () => any;
@@ -215,9 +215,9 @@ closed: () => any;
 onError?: ((error: Error) => any) | undefined;
 onLoaded?: (() => any) | undefined;
 onClose?: (() => any) | undefined;
+onClosed?: (() => any) | undefined;
 onBack?: (() => any) | undefined;
 onOpened?: (() => any) | undefined;
-onClosed?: (() => any) | undefined;
 "onMessage-sent"?: ((message: string) => any) | undefined;
 "onMessage-received"?: ((message: string) => any) | undefined;
 "onSpeaking-started"?: (() => any) | undefined;
@@ -242,9 +242,9 @@ export declare const LiyaAiEnvVuejsEnvironmentModal: DefineComponent<Props_2, {}
 error: (error: Error) => any;
 loaded: () => any;
 close: () => any;
+closed: () => any;
 back: () => any;
 opened: () => any;
-closed: () => any;
 "message-sent": (message: string) => any;
 "message-received": (message: string) => any;
 "speaking-started": () => any;
@@ -253,9 +253,9 @@ closed: () => any;
 onError?: ((error: Error) => any) | undefined;
 onLoaded?: (() => any) | undefined;
 onClose?: (() => any) | undefined;
+onClosed?: (() => any) | undefined;
 onBack?: (() => any) | undefined;
 onOpened?: (() => any) | undefined;
-onClosed?: (() => any) | undefined;
 "onMessage-sent"?: ((message: string) => any) | undefined;
 "onMessage-received"?: ((message: string) => any) | undefined;
 "onSpeaking-started"?: (() => any) | undefined;
@@ -536,6 +536,7 @@ export declare interface LiyaAiEnvVuejsTranslations {
         listening: string;
         thinking: string;
         pressToSpeak: string;
+        notSupported: string;
     };
     controls: {
         close: string;
@@ -544,6 +545,7 @@ export declare interface LiyaAiEnvVuejsTranslations {
         replay: string;
         pressAndSpeak: string;
     };
+    patienceTooltips: string[];
     premium: {
         title: string;
         upgradePremium: string;
@@ -803,9 +805,13 @@ export declare function useLiyaAiEnvVuejsVoice(): {
     isRecording: ComputedRef<boolean>;
     transcript: ComputedRef<string>;
     isSupported: ComputedRef<boolean>;
+    isIOS: ComputedRef<boolean>;
+    micPermission: ComputedRef<"prompt" | "granted" | "denied">;
     startRecording: () => void;
     stopRecording: () => void;
     setLanguage: (lang: string) => void;
+    checkMicPermission: () => Promise<"prompt" | "granted" | "denied">;
+    requestMicPermission: () => Promise<boolean>;
     cleanup: () => void;
 };
 
