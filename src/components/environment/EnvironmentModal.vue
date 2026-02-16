@@ -1,3 +1,18 @@
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗ 
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import LiyaAiEnvVuejsClassroomScene from './ClassroomScene.vue'
@@ -8,6 +23,8 @@ import type {
 } from '../../types'
 import { useLiyaAiEnvVuejsEnvironment } from '../../composables/useEnvironment'
 import { useLiyaAiEnvVuejsVoice } from '../../composables/useVoice'
+import { liyaAiEnvVuejsCheckBrowserCompatibility } from '../../composables/useBrowserCompat'
+import { useLiyaAiEnvVuejsAvatarColors } from '../../composables/useAvatarColors'
 import { liyaAiEnvVuejsGetAvatarModel, liyaAiEnvVuejsGetSceneBackground, liyaAiEnvVuejsCheckUserAccess, liyaAiEnvVuejsGetPresentations, liyaAiEnvVuejsGetConfig } from '../../api'
 import { useLiyaAiEnvVuejsI18n } from '../../i18n'
 
@@ -121,6 +138,44 @@ const liyaAiEnvVuejsIsLoadingAvatar = ref(false)
 const liyaAiEnvVuejsIsCheckingAccess = ref(true)
 const liyaAiEnvVuejsAccessError = ref<{ code: string; message: string } | null>(null)
 const liyaAiEnvVuejsHasAccessError = computed(() => liyaAiEnvVuejsAccessError.value !== null)
+
+// Browser compatibility state
+const liyaAiEnvVuejsIsBrowserSupported = ref(true)
+const liyaAiEnvVuejsBrowserCompatReason = ref<string | undefined>(undefined)
+
+// Microphone permission gate state
+const liyaAiEnvVuejsIsMicPermissionPending = ref(false)
+
+// Settings panel visibility state
+const liyaAiEnvVuejsIsSettingsPanelOpen = ref(false)
+
+// Avatar colors composable
+const { colors: liyaAiEnvVuejsAvatarColors, presets: liyaAiEnvVuejsColorPresets, currentPresetId: liyaAiEnvVuejsCurrentPresetId, setPreset: liyaAiEnvVuejsSetPreset, setColor: liyaAiEnvVuejsSetColor, reset: liyaAiEnvVuejsResetColors, init: liyaAiEnvVuejsInitColors } = useLiyaAiEnvVuejsAvatarColors()
+
+// ClassroomScene ref for color application
+const liyaAiEnvVuejsClassroomSceneRef = ref<InstanceType<typeof LiyaAiEnvVuejsClassroomScene> | null>(null)
+
+// Apply colors when avatar is loaded
+function liyaAiEnvVuejsOnAvatarLoaded(): void {
+  liyaAiEnvVuejsApplyCurrentColors()
+  emit('opened')
+}
+
+// Apply current colors to avatar
+function liyaAiEnvVuejsApplyCurrentColors(): void {
+  if (liyaAiEnvVuejsClassroomSceneRef.value?.applyOutfitColors) {
+    liyaAiEnvVuejsClassroomSceneRef.value.applyOutfitColors({
+      top: liyaAiEnvVuejsAvatarColors.value.top,
+      bottom: liyaAiEnvVuejsAvatarColors.value.bottom,
+      footwear: liyaAiEnvVuejsAvatarColors.value.footwear
+    })
+  }
+}
+
+// Watch for color changes and apply them
+watch(liyaAiEnvVuejsAvatarColors, () => {
+  liyaAiEnvVuejsApplyCurrentColors()
+}, { deep: true })
 
 const liyaAiEnvVuejsAccessErrorMessage = computed(() => {
   if (!liyaAiEnvVuejsAccessError.value) return ''
@@ -491,13 +546,22 @@ async function liyaAiEnvVuejsLoadInitialPresentation(): Promise<void> {
 // Watch for open state: check access first, then load avatar model, then speak welcome
 watch(() => props.isOpen, async (open) => {
   if (open) {
+    // Check browser compatibility first
+    const compat = liyaAiEnvVuejsCheckBrowserCompatibility()
+    liyaAiEnvVuejsIsBrowserSupported.value = compat.supported
+    liyaAiEnvVuejsBrowserCompatReason.value = compat.reason
+    
+    if (!compat.supported) {
+      liyaAiEnvVuejsIsCheckingAccess.value = false
+      return
+    }
+    
     // Request microphone permission early (before user clicks mic button)
     if (isVoiceSupported.value) {
-      checkMicPermission().then(status => {
-        if (status === 'prompt') {
-          requestMicPermission()
-        }
-      })
+      const status = await checkMicPermission()
+      if (status === 'prompt') {
+        liyaAiEnvVuejsIsMicPermissionPending.value = true
+      }
     }
     
     await liyaAiEnvVuejsCheckAccess()
@@ -566,6 +630,12 @@ function liyaAiEnvVuejsHandleClose(): void {
   emit('close')
 }
 
+// Handle mic permission request
+async function liyaAiEnvVuejsHandleMicPermissionRequest(): Promise<void> {
+  await requestMicPermission()
+  liyaAiEnvVuejsIsMicPermissionPending.value = false
+}
+
 function liyaAiEnvVuejsHandleKeydown(e: KeyboardEvent): void {
   if (e.key === 'Escape') {
     liyaAiEnvVuejsHandleClose()
@@ -574,6 +644,8 @@ function liyaAiEnvVuejsHandleKeydown(e: KeyboardEvent): void {
 
 onMounted(() => {
   document.addEventListener('keydown', liyaAiEnvVuejsHandleKeydown)
+  // Initialize avatar colors from localStorage
+  liyaAiEnvVuejsInitColors()
 })
 
 onUnmounted(() => {
@@ -618,6 +690,17 @@ onUnmounted(() => {
               >
                 <span class="liya-ai-env-vuejs-header__lang-text">{{ liyaAiEnvVuejsLocale === 'tr' ? 'EN' : 'TR' }}</span>
               </button>
+              <!-- Settings Button -->
+              <button 
+                class="liya-ai-env-vuejs-header__settings-btn"
+                :class="{ 'liya-ai-env-vuejs-header__settings-btn--active': liyaAiEnvVuejsIsSettingsPanelOpen }"
+                @click="liyaAiEnvVuejsIsSettingsPanelOpen = !liyaAiEnvVuejsIsSettingsPanelOpen"
+                :title="liyaAiEnvVuejsT.settings.title"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                  <path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                </svg>
+              </button>
               <button 
                 v-if="showCloseButton"
                 class="liya-ai-env-vuejs-header__close-btn"
@@ -630,11 +713,104 @@ onUnmounted(() => {
               </button>
             </div>
           </header>
+          
+          <!-- Settings Panel -->
+          <Transition name="liya-ai-env-vuejs-settings-panel">
+            <div v-if="liyaAiEnvVuejsIsSettingsPanelOpen" class="liya-ai-env-vuejs-settings-panel">
+              <div class="liya-ai-env-vuejs-settings-panel__header">
+                <h3 class="liya-ai-env-vuejs-settings-panel__title">{{ liyaAiEnvVuejsT.settings.outfitColors }}</h3>
+                <button 
+                  class="liya-ai-env-vuejs-settings-panel__close"
+                  @click="liyaAiEnvVuejsIsSettingsPanelOpen = false"
+                >
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Presets -->
+              <div class="liya-ai-env-vuejs-settings-panel__section">
+                <label class="liya-ai-env-vuejs-settings-panel__label">{{ liyaAiEnvVuejsT.settings.presets }}</label>
+                <div class="liya-ai-env-vuejs-settings-panel__presets">
+                  <button
+                    v-for="preset in liyaAiEnvVuejsColorPresets"
+                    :key="preset.id"
+                    class="liya-ai-env-vuejs-settings-panel__preset"
+                    :class="{ 'liya-ai-env-vuejs-settings-panel__preset--active': liyaAiEnvVuejsCurrentPresetId === preset.id }"
+                    :style="{ background: preset.top }"
+                    :title="preset.name"
+                    @click="liyaAiEnvVuejsSetPreset(preset.id)"
+                  ></button>
+                </div>
+              </div>
+              
+              <!-- Custom Colors -->
+              <div class="liya-ai-env-vuejs-settings-panel__section">
+                <label class="liya-ai-env-vuejs-settings-panel__label">{{ liyaAiEnvVuejsT.settings.customColor }}</label>
+                <div class="liya-ai-env-vuejs-settings-panel__colors">
+                  <div class="liya-ai-env-vuejs-settings-panel__color-row">
+                    <span>{{ liyaAiEnvVuejsT.settings.top }}</span>
+                    <input type="color" :value="liyaAiEnvVuejsAvatarColors.top" @input="(e) => liyaAiEnvVuejsSetColor('top', (e.target as HTMLInputElement).value)" />
+                  </div>
+                  <div class="liya-ai-env-vuejs-settings-panel__color-row">
+                    <span>{{ liyaAiEnvVuejsT.settings.bottom }}</span>
+                    <input type="color" :value="liyaAiEnvVuejsAvatarColors.bottom" @input="(e) => liyaAiEnvVuejsSetColor('bottom', (e.target as HTMLInputElement).value)" />
+                  </div>
+                  <div class="liya-ai-env-vuejs-settings-panel__color-row">
+                    <span>{{ liyaAiEnvVuejsT.settings.footwear }}</span>
+                    <input type="color" :value="liyaAiEnvVuejsAvatarColors.footwear" @input="(e) => liyaAiEnvVuejsSetColor('footwear', (e.target as HTMLInputElement).value)" />
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Reset Button -->
+              <button 
+                class="liya-ai-env-vuejs-settings-panel__reset"
+                @click="liyaAiEnvVuejsResetColors"
+              >
+                {{ liyaAiEnvVuejsT.settings.reset }}
+              </button>
+            </div>
+          </Transition>
+
+          <!-- Mic Permission Banner -->
+          <div v-if="liyaAiEnvVuejsIsMicPermissionPending" class="liya-ai-env-vuejs-mic-permission">
+            <div class="liya-ai-env-vuejs-mic-permission__icon">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm-1-9c0-.55.45-1 1-1s1 .45 1 1v6c0 .55-.45 1-1 1s-1-.45-1-1V5zm6 6c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+              </svg>
+            </div>
+            <div class="liya-ai-env-vuejs-mic-permission__text">
+              <span class="liya-ai-env-vuejs-mic-permission__title">{{ liyaAiEnvVuejsT.mic.permissionRequired }}</span>
+              <span class="liya-ai-env-vuejs-mic-permission__desc">{{ liyaAiEnvVuejsT.mic.permissionMessage }}</span>
+            </div>
+            <button 
+              class="liya-ai-env-vuejs-mic-permission__btn"
+              @click="liyaAiEnvVuejsHandleMicPermissionRequest"
+            >
+              {{ liyaAiEnvVuejsT.mic.allowButton }}
+            </button>
+          </div>
 
           <!-- Scene -->
           <div class="liya-ai-env-vuejs-scene">
+            <!-- Browser Not Supported Overlay -->
+            <div v-if="!liyaAiEnvVuejsIsBrowserSupported" class="liya-ai-env-vuejs-unsupported-overlay">
+              <div class="liya-ai-env-vuejs-unsupported-overlay__content">
+                <div class="liya-ai-env-vuejs-unsupported-overlay__icon">
+                  <svg viewBox="0 0 24 24" fill="currentColor" width="48" height="48">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                  </svg>
+                </div>
+                <h3 class="liya-ai-env-vuejs-unsupported-overlay__title">{{ liyaAiEnvVuejsT.browser.unsupportedTitle }}</h3>
+                <p class="liya-ai-env-vuejs-unsupported-overlay__text">{{ liyaAiEnvVuejsT.browser.unsupportedMessage }}</p>
+                <p class="liya-ai-env-vuejs-unsupported-overlay__browsers">{{ liyaAiEnvVuejsT.browser.recommendedBrowsers }}</p>
+              </div>
+            </div>
+
             <!-- Access Loading Spinner -->
-            <div v-if="liyaAiEnvVuejsIsCheckingAccess" class="liya-ai-env-vuejs-access-loading">
+            <div v-else-if="liyaAiEnvVuejsIsCheckingAccess" class="liya-ai-env-vuejs-access-loading">
               <div class="liya-ai-env-vuejs-access-loading__spinner"></div>
             </div>
 
@@ -665,6 +841,7 @@ onUnmounted(() => {
             <!-- 3D Scene (only when access granted) -->
             <template v-else>
               <LiyaAiEnvVuejsClassroomScene
+                ref="liyaAiEnvVuejsClassroomSceneRef"
                 :classroom-model-url="liyaAiEnvVuejsSceneModelUrl"
                 :avatar-model-url="liyaAiEnvVuejsAvatarModelUrl"
                 :avatar-position="avatarPosition"
@@ -674,7 +851,7 @@ onUnmounted(() => {
                 :gestures="enableGestures ? gestures : []"
                 :current-time="audioTime"
                 :presentation-result="currentPresentation"
-                @loaded="$emit('opened')"
+                @loaded="liyaAiEnvVuejsOnAvatarLoaded"
                 @error="(e) => $emit('error', e)"
               />
 
@@ -1661,5 +1838,309 @@ onUnmounted(() => {
 .liya-ai-env-vuejs-glass-fade-enter-from,
 .liya-ai-env-vuejs-glass-fade-leave-to {
   opacity: 0;
+}
+
+/* Browser Not Supported Overlay */
+.liya-ai-env-vuejs-unsupported-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(185, 28, 28, 0.15) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px;
+  max-width: 380px;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.3);
+  color: #ef4444;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__icon svg {
+  width: 48px;
+  height: 48px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px 0;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__text {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0 0 12px 0;
+  line-height: 1.6;
+}
+
+.liya-ai-env-vuejs-unsupported-overlay__browsers {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+}
+
+/* Mic Permission Banner */
+.liya-ai-env-vuejs-mic-permission {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(139, 92, 246, 0.15) 100%);
+  border-bottom: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.liya-ai-env-vuejs-mic-permission__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #a5b4fc;
+  flex-shrink: 0;
+}
+
+.liya-ai-env-vuejs-mic-permission__text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.liya-ai-env-vuejs-mic-permission__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.liya-ai-env-vuejs-mic-permission__desc {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.liya-ai-env-vuejs-mic-permission__btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.liya-ai-env-vuejs-mic-permission__btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+/* Settings Button */
+.liya-ai-env-vuejs-header__settings-btn {
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.liya-ai-env-vuejs-header__settings-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.liya-ai-env-vuejs-header__settings-btn--active {
+  background: rgba(99, 102, 241, 0.3);
+  color: #a5b4fc;
+}
+
+/* Settings Panel */
+.liya-ai-env-vuejs-settings-panel {
+  position: absolute;
+  top: 70px;
+  right: 16px;
+  width: 280px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 16px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.liya-ai-env-vuejs-settings-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.liya-ai-env-vuejs-settings-panel__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0;
+}
+
+.liya-ai-env-vuejs-settings-panel__close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.liya-ai-env-vuejs-settings-panel__close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  color: #f87171;
+}
+
+.liya-ai-env-vuejs-settings-panel__section {
+  margin-bottom: 16px;
+}
+
+.liya-ai-env-vuejs-settings-panel__label {
+  display: block;
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.liya-ai-env-vuejs-settings-panel__presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.liya-ai-env-vuejs-settings-panel__preset {
+  width: 28px;
+  height: 28px;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.liya-ai-env-vuejs-settings-panel__preset:hover {
+  transform: scale(1.1);
+}
+
+.liya-ai-env-vuejs-settings-panel__preset--active {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+}
+
+.liya-ai-env-vuejs-settings-panel__colors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.liya-ai-env-vuejs-settings-panel__color-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.liya-ai-env-vuejs-settings-panel__color-row span {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.liya-ai-env-vuejs-settings-panel__color-row input[type="color"] {
+  width: 32px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.liya-ai-env-vuejs-settings-panel__color-row input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.liya-ai-env-vuejs-settings-panel__color-row input[type="color"]::-webkit-color-swatch {
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.liya-ai-env-vuejs-settings-panel__reset {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.liya-ai-env-vuejs-settings-panel__reset:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #f1f5f9;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Settings Panel Transition */
+.liya-ai-env-vuejs-settings-panel-enter-active,
+.liya-ai-env-vuejs-settings-panel-leave-active {
+  transition: all 0.3s ease;
+}
+
+.liya-ai-env-vuejs-settings-panel-enter-from,
+.liya-ai-env-vuejs-settings-panel-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
 }
 </style>

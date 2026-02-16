@@ -1,3 +1,18 @@
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗ 
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 import { ref, computed, readonly } from 'vue'
 import { liyaAiEnvVuejsTranslations, liyaAiEnvVuejsDetectBrowserLocale, liyaAiEnvVuejsIsSupportedLocale, type LiyaAiEnvVuejsSupportedLocale, type LiyaAiEnvVuejsTranslations } from './translations'
 

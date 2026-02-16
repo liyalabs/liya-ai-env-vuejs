@@ -1,3 +1,18 @@
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗ 
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 // Liya AI Environment - Internationalization Translations
 
 export type LiyaAiEnvVuejsSupportedLocale = 'tr' | 'en'
@@ -10,6 +25,21 @@ export interface LiyaAiEnvVuejsTranslations {
     preparing: string
     speaking: string
     online: string
+  }
+  // Browser compatibility
+  browser: {
+    unsupportedTitle: string
+    unsupportedMessage: string
+    webglRequired: string
+    recommendedBrowsers: string
+    closeButton: string
+  }
+  // Microphone permission
+  mic: {
+    permissionRequired: string
+    permissionMessage: string
+    allowButton: string
+    denied: string
   }
   // Preparing rotating messages
   preparingMessages: string[]
@@ -59,6 +89,17 @@ export interface LiyaAiEnvVuejsTranslations {
   branding: {
     environmentTitle: string
   }
+  // Settings
+  settings: {
+    title: string
+    outfitColors: string
+    top: string
+    bottom: string
+    footwear: string
+    presets: string
+    customColor: string
+    reset: string
+  }
 }
 
 export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, LiyaAiEnvVuejsTranslations> = {
@@ -69,6 +110,19 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       preparing: 'Hazırlanıyor...',
       speaking: 'Konuşuyor...',
       online: 'Çevrimiçi',
+    },
+    browser: {
+      unsupportedTitle: 'Tarayıcı Desteklenmiyor',
+      unsupportedMessage: 'Bu ortam tarayıcınızda çalışmıyor. 3D sahne için WebGL desteği gereklidir.',
+      webglRequired: 'WebGL desteği gerekli',
+      recommendedBrowsers: 'Önerilen: Chrome, Edge, Firefox, Safari',
+      closeButton: 'Kapat',
+    },
+    mic: {
+      permissionRequired: 'Mikrofon İzni Gerekli',
+      permissionMessage: 'Sesli iletişim için mikrofon erişimine izin verin.',
+      allowButton: 'İzin Ver',
+      denied: 'Mikrofon izni reddedildi',
     },
     preparingMessages: [
       'Hazırlanıyor...',
@@ -133,6 +187,16 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
     branding: {
       environmentTitle: 'Liya AI Environment',
     },
+    settings: {
+      title: 'Ayarlar',
+      outfitColors: 'Kıyafet Renkleri',
+      top: 'Üst',
+      bottom: 'Alt',
+      footwear: 'Ayakkabı',
+      presets: 'Hazır Renkler',
+      customColor: 'Özel Renk',
+      reset: 'Sıfırla',
+    },
   },
   en: {
     status: {
@@ -141,6 +205,19 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       preparing: 'Preparing...',
       speaking: 'Speaking...',
       online: 'Online',
+    },
+    browser: {
+      unsupportedTitle: 'Browser Not Supported',
+      unsupportedMessage: 'This environment does not work in your browser. WebGL support is required for 3D scene.',
+      webglRequired: 'WebGL support required',
+      recommendedBrowsers: 'Recommended: Chrome, Edge, Firefox, Safari',
+      closeButton: 'Close',
+    },
+    mic: {
+      permissionRequired: 'Microphone Permission Required',
+      permissionMessage: 'Allow microphone access for voice communication.',
+      allowButton: 'Allow',
+      denied: 'Microphone permission denied',
     },
     preparingMessages: [
       'Preparing...',
@@ -204,6 +281,16 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
     },
     branding: {
       environmentTitle: 'Liya AI Environment',
+    },
+    settings: {
+      title: 'Settings',
+      outfitColors: 'Outfit Colors',
+      top: 'Top',
+      bottom: 'Bottom',
+      footwear: 'Footwear',
+      presets: 'Presets',
+      customColor: 'Custom Color',
+      reset: 'Reset',
     },
   },
 }

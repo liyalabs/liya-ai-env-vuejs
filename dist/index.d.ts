@@ -4,20 +4,23 @@ import { ComponentOptionsMixin } from 'vue';
 import { ComponentProvideOptions } from 'vue';
 import { ComputedRef } from 'vue';
 import { DefineComponent } from 'vue';
+import { default as LiyaAiEnvVuejsEnvironmentModal } from './EnvironmentModal.vue';
+import { default as LiyaAiEnvVuejsEnvironmentStandalone } from './EnvironmentStandalone.vue';
 import { PublicProps } from 'vue';
 import { Ref } from 'vue';
 import * as THREE_2 from 'three';
 
-declare const __VLS_component: DefineComponent<Props_5, {
+declare const __VLS_component: DefineComponent<Props_3, {
 loadModel: typeof liyaAiEnvVuejsLoadModel;
 update: typeof liyaAiEnvVuejsUpdate;
 getModel: typeof liyaAiEnvVuejsGetModel;
 dispose: typeof liyaAiEnvVuejsDispose;
+applyOutfitColors: typeof liyaAiEnvVuejsApplyOutfitColors_2;
 }, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {
 error: (error: Error) => any;
 progress: (progress: number) => any;
 loaded: () => any;
-}, string, PublicProps, Readonly<Props_5> & Readonly<{
+}, string, PublicProps, Readonly<Props_3> & Readonly<{
 onError?: ((error: Error) => any) | undefined;
 onProgress?: ((progress: number) => any) | undefined;
 onLoaded?: (() => any) | undefined;
@@ -71,6 +74,18 @@ export declare interface LiyaAiEnvVuejsApiResponse<T = unknown> {
     code?: string;
     errors?: Record<string, string[]>;
 }
+
+declare function liyaAiEnvVuejsApplyOutfitColors(colors: {
+    top: string;
+    bottom: string;
+    footwear: string;
+}): void;
+
+declare function liyaAiEnvVuejsApplyOutfitColors_2(colors: {
+    top: string;
+    bottom: string;
+    footwear: string;
+}): void;
 
 declare interface LiyaAiEnvVuejsArmPose {
     shoulderRotation?: {
@@ -149,11 +164,13 @@ export declare interface LiyaAiEnvVuejsClassroomConfig {
     scale?: number;
 }
 
-export declare const LiyaAiEnvVuejsClassroomScene: DefineComponent<Props_4, {}, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {
+export declare const LiyaAiEnvVuejsClassroomScene: DefineComponent<Props_2, {
+applyOutfitColors: typeof liyaAiEnvVuejsApplyOutfitColors;
+}, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {
 error: (error: Error) => any;
 progress: (progress: number) => any;
 loaded: () => any;
-}, string, PublicProps, Readonly<Props_4> & Readonly<{
+}, string, PublicProps, Readonly<Props_2> & Readonly<{
 onError?: ((error: Error) => any) | undefined;
 onProgress?: ((progress: number) => any) | undefined;
 onLoaded?: (() => any) | undefined;
@@ -238,44 +255,7 @@ theme: LiyaAiEnvVuejsThemeConfig;
 mode: LiyaAiEnvVuejsMode;
 }, {}, {}, {}, string, ComponentProvideOptions, false, {}, any>;
 
-export declare const LiyaAiEnvVuejsEnvironmentModal: DefineComponent<Props_2, {}, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {
-error: (error: Error) => any;
-loaded: () => any;
-close: () => any;
-closed: () => any;
-back: () => any;
-opened: () => any;
-"message-sent": (message: string) => any;
-"message-received": (message: string) => any;
-"speaking-started": () => any;
-"speaking-ended": () => any;
-}, string, PublicProps, Readonly<Props_2> & Readonly<{
-onError?: ((error: Error) => any) | undefined;
-onLoaded?: (() => any) | undefined;
-onClose?: (() => any) | undefined;
-onClosed?: (() => any) | undefined;
-onBack?: (() => any) | undefined;
-onOpened?: (() => any) | undefined;
-"onMessage-sent"?: ((message: string) => any) | undefined;
-"onMessage-received"?: ((message: string) => any) | undefined;
-"onSpeaking-started"?: (() => any) | undefined;
-"onSpeaking-ended"?: (() => any) | undefined;
-}>, {
-classroomModelUrl: string;
-avatarModelUrl: string;
-avatarPosition: LiyaAiEnvVuejsPosition;
-cameraConfig: LiyaAiEnvVuejsCameraConfig;
-isOpen: boolean;
-showBackButton: boolean;
-showCloseButton: boolean;
-welcomeMessage: string;
-enableGestures: boolean;
-enableSubtitles: boolean;
-assistantName: string;
-theme: LiyaAiEnvVuejsThemeConfig;
-}, {}, {}, {}, string, ComponentProvideOptions, false, {
-liyaAiEnvVuejsMessagesRef: HTMLDivElement;
-}, any>;
+export { LiyaAiEnvVuejsEnvironmentModal }
 
 export declare interface LiyaAiEnvVuejsEnvironmentProps {
     mode?: LiyaAiEnvVuejsMode;
@@ -292,34 +272,7 @@ export declare interface LiyaAiEnvVuejsEnvironmentProps {
     theme?: LiyaAiEnvVuejsThemeConfig;
 }
 
-export declare const LiyaAiEnvVuejsEnvironmentStandalone: DefineComponent<Props_3, {}, {}, {}, {}, ComponentOptionsMixin, ComponentOptionsMixin, {
-error: (error: Error) => any;
-loaded: () => any;
-back: () => any;
-"message-sent": (message: string) => any;
-"message-received": (message: string) => any;
-"speaking-started": () => any;
-"speaking-ended": () => any;
-}, string, PublicProps, Readonly<Props_3> & Readonly<{
-onError?: ((error: Error) => any) | undefined;
-onLoaded?: (() => any) | undefined;
-onBack?: (() => any) | undefined;
-"onMessage-sent"?: ((message: string) => any) | undefined;
-"onMessage-received"?: ((message: string) => any) | undefined;
-"onSpeaking-started"?: (() => any) | undefined;
-"onSpeaking-ended"?: (() => any) | undefined;
-}>, {
-classroomModelUrl: string;
-avatarModelUrl: string;
-avatarPosition: LiyaAiEnvVuejsPosition;
-cameraConfig: LiyaAiEnvVuejsCameraConfig;
-showBackButton: boolean;
-welcomeMessage: string;
-enableGestures: boolean;
-enableSubtitles: boolean;
-assistantName: string;
-theme: LiyaAiEnvVuejsThemeConfig;
-}, {}, {}, {}, string, ComponentProvideOptions, false, {}, HTMLDivElement>;
+export { LiyaAiEnvVuejsEnvironmentStandalone }
 
 export declare interface LiyaAiEnvVuejsEnvironmentState {
     isOpen: boolean;
@@ -440,6 +393,21 @@ export declare interface LiyaAiEnvVuejsMessage {
     response_time?: number;
 }
 
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 export declare type LiyaAiEnvVuejsMode = 'modal_fullscreen' | 'standalone';
 
 declare const LiyaAiEnvVuejsPlugin: {
@@ -502,6 +470,21 @@ export declare interface LiyaAiEnvVuejsSpeechResponse {
     duration?: number;
 }
 
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 export declare type LiyaAiEnvVuejsSupportedLocale = 'tr' | 'en';
 
 export declare interface LiyaAiEnvVuejsThemeConfig {
@@ -521,6 +504,19 @@ export declare interface LiyaAiEnvVuejsTranslations {
         preparing: string;
         speaking: string;
         online: string;
+    };
+    browser: {
+        unsupportedTitle: string;
+        unsupportedMessage: string;
+        webglRequired: string;
+        recommendedBrowsers: string;
+        closeButton: string;
+    };
+    mic: {
+        permissionRequired: string;
+        permissionMessage: string;
+        allowButton: string;
+        denied: string;
     };
     preparingMessages: string[];
     chat: {
@@ -561,6 +557,16 @@ export declare interface LiyaAiEnvVuejsTranslations {
     branding: {
         environmentTitle: string;
     };
+    settings: {
+        title: string;
+        outfitColors: string;
+        top: string;
+        bottom: string;
+        footwear: string;
+        presets: string;
+        customColor: string;
+        reset: string;
+    };
 }
 
 export declare const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, LiyaAiEnvVuejsTranslations>;
@@ -590,34 +596,6 @@ declare interface Props {
 }
 
 declare interface Props_2 {
-    isOpen?: boolean;
-    showBackButton?: boolean;
-    showCloseButton?: boolean;
-    classroomModelUrl?: string;
-    avatarModelUrl?: string;
-    avatarPosition?: LiyaAiEnvVuejsPosition;
-    cameraConfig?: LiyaAiEnvVuejsCameraConfig;
-    welcomeMessage?: string;
-    enableGestures?: boolean;
-    enableSubtitles?: boolean;
-    assistantName?: string;
-    theme?: LiyaAiEnvVuejsThemeConfig;
-}
-
-declare interface Props_3 {
-    showBackButton?: boolean;
-    classroomModelUrl?: string;
-    avatarModelUrl?: string;
-    avatarPosition?: LiyaAiEnvVuejsPosition;
-    cameraConfig?: LiyaAiEnvVuejsCameraConfig;
-    welcomeMessage?: string;
-    enableGestures?: boolean;
-    enableSubtitles?: boolean;
-    assistantName?: string;
-    theme?: LiyaAiEnvVuejsThemeConfig;
-}
-
-declare interface Props_4 {
     classroomModelUrl?: string;
     avatarModelUrl?: string;
     avatarPosition?: LiyaAiEnvVuejsPosition;
@@ -630,7 +608,7 @@ declare interface Props_4 {
     presentationResult?: LiyaAiEnvVuejsPresentationResult | null;
 }
 
-declare interface Props_5 {
+declare interface Props_3 {
     modelUrl?: string;
     isSpeaking?: boolean;
     visemes?: LiyaAiEnvVuejsViseme[];
@@ -638,6 +616,21 @@ declare interface Props_5 {
     animationConfig?: LiyaAiEnvVuejsAnimationConfig;
 }
 
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 export declare function useLiyaAiEnvVuejsAudioAnalyzer(): {
     audioLevel: ComputedRef<number>;
     isAnalyzing: ComputedRef<boolean>;
@@ -801,6 +794,21 @@ export declare function useLiyaAiEnvVuejsI18n(): {
     liyaAiEnvVuejsIsSupportedLocale: typeof liyaAiEnvVuejsIsSupportedLocale;
 };
 
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 export declare function useLiyaAiEnvVuejsVoice(): {
     isRecording: ComputedRef<boolean>;
     transcript: ComputedRef<string>;

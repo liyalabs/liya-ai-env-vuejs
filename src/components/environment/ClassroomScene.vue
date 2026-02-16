@@ -1,3 +1,18 @@
+/**
+ * ==================================================
+ * ██╗     ██╗██╗   ██╗ █████╗ 
+ * ██║     ██║╚██╗ ██╔╝██╔══██╗
+ * ██║     ██║ ╚████╔╝ ███████║
+ * ██║     ██║  ╚██╔╝  ██╔══██║
+ * ███████╗██║   ██║   ██║  ██║
+ * ╚══════╝╚═╝   ╚═╝   ╚═╝  ╚═╝
+ *        AI Assistant
+ * ==================================================
+ * Author / Creator : Mahmut Denizli (With help of LiyaAi)
+ * License          : MIT
+ * Connect          : liyalabs.com, info@liyalabs.com
+ * ==================================================
+ */
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import * as THREE from 'three'
@@ -89,6 +104,11 @@ let liyaAiEnvVuejsLeftShoulderBone: THREE.Object3D | null = null
 let liyaAiEnvVuejsRightShoulderBone: THREE.Object3D | null = null
 let liyaAiEnvVuejsLeftHandBone: THREE.Object3D | null = null
 let liyaAiEnvVuejsRightHandBone: THREE.Object3D | null = null
+
+// Outfit mesh references for color changing
+let liyaAiEnvVuejsOutfitTopMesh: THREE.Mesh | null = null
+let liyaAiEnvVuejsOutfitBottomMesh: THREE.Mesh | null = null
+let liyaAiEnvVuejsOutfitFootwearMesh: THREE.Mesh | null = null
 
 // Safari detection for performance optimizations
 const liyaAiEnvVuejsIsSafari = typeof navigator !== 'undefined' && 
@@ -385,7 +405,11 @@ async function liyaAiEnvVuejsLoadAvatarModel(url: string): Promise<void> {
           // Scale avatar appropriately
           liyaAiEnvVuejsAvatarModel.scale.set(1.1, 1.1, 1.1)
           
-          // Setup shadows and collect morph targets
+          // Setup shadows, collect morph targets, and find outfit meshes
+          liyaAiEnvVuejsOutfitTopMesh = null
+          liyaAiEnvVuejsOutfitBottomMesh = null
+          liyaAiEnvVuejsOutfitFootwearMesh = null
+          
           liyaAiEnvVuejsAvatarModel.traverse((child) => {
             if (child instanceof THREE.Mesh) {
               child.castShadow = true
@@ -393,6 +417,15 @@ async function liyaAiEnvVuejsLoadAvatarModel(url: string): Promise<void> {
               
               if (child.morphTargetInfluences) {
                 liyaAiEnvVuejsMorphTargetMeshes.push(child)
+              }
+              
+              // Find outfit meshes for color changing (exact name match)
+              if (child.name === 'Wolf3D_Outfit_Top') {
+                liyaAiEnvVuejsOutfitTopMesh = child
+              } else if (child.name === 'Wolf3D_Outfit_Bottom') {
+                liyaAiEnvVuejsOutfitBottomMesh = child
+              } else if (child.name === 'Wolf3D_Outfit_Footwear') {
+                liyaAiEnvVuejsOutfitFootwearMesh = child
               }
             }
           })
@@ -977,6 +1010,27 @@ onMounted(() => {
 
 onUnmounted(() => {
   liyaAiEnvVuejsDispose()
+})
+
+// Apply outfit colors to avatar meshes
+function liyaAiEnvVuejsApplyOutfitColors(colors: { top: string; bottom: string; footwear: string }): void {
+  if (liyaAiEnvVuejsOutfitTopMesh?.material) {
+    const mat = liyaAiEnvVuejsOutfitTopMesh.material as THREE.MeshStandardMaterial
+    mat.color.set(colors.top)
+  }
+  if (liyaAiEnvVuejsOutfitBottomMesh?.material) {
+    const mat = liyaAiEnvVuejsOutfitBottomMesh.material as THREE.MeshStandardMaterial
+    mat.color.set(colors.bottom)
+  }
+  if (liyaAiEnvVuejsOutfitFootwearMesh?.material) {
+    const mat = liyaAiEnvVuejsOutfitFootwearMesh.material as THREE.MeshStandardMaterial
+    mat.color.set(colors.footwear)
+  }
+}
+
+// Expose methods for parent component
+defineExpose({
+  applyOutfitColors: liyaAiEnvVuejsApplyOutfitColors
 })
 </script>
 
