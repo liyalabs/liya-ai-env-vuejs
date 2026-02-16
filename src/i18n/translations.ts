@@ -146,6 +146,8 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       'Kendini tanıt',
       'Konu hakkında özet bilgi ver',
       'Derse başla',
+      'Bir sonraki slayta geç',
+      'Bir önceki slayta geç',
     ],
     voice: {
       startRecording: 'Konuşmaya başla',
@@ -241,6 +243,8 @@ export const liyaAiEnvVuejsTranslations: Record<LiyaAiEnvVuejsSupportedLocale, L
       'Introduce yourself',
       'Give a summary about the topic',
       'Start the lesson',
+      'Go to next slide',
+      'Go to previous slide',
     ],
     voice: {
       startRecording: 'Start speaking',
