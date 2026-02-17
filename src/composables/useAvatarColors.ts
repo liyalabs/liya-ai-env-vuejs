@@ -48,8 +48,31 @@ const LIYA_AI_ENV_VUEJS_COLOR_PRESETS: LiyaAiEnvVuejsAvatarColorPreset[] = [
   { id: 'white-clean', name: 'Beyaz Sade', top: '#F8FAFC', bottom: '#E2E8F0', footwear: '#CBD5E1' }
 ]
 
-const liyaAiEnvVuejsColors = ref<LiyaAiEnvVuejsAvatarColors>({ ...LIYA_AI_ENV_VUEJS_DEFAULT_COLORS })
-const liyaAiEnvVuejsCurrentPresetId = ref<string | null>('white-clean')
+// Initialize colors from localStorage immediately on module load
+function liyaAiEnvVuejsGetInitialColors(): { colors: LiyaAiEnvVuejsAvatarColors; presetId: string | null } {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return { colors: { ...LIYA_AI_ENV_VUEJS_DEFAULT_COLORS }, presetId: 'white-clean' }
+  }
+  
+  try {
+    const stored = localStorage.getItem(LIYA_AI_ENV_VUEJS_STORAGE_KEY)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        colors: parsed.colors ? { ...LIYA_AI_ENV_VUEJS_DEFAULT_COLORS, ...parsed.colors } : { ...LIYA_AI_ENV_VUEJS_DEFAULT_COLORS },
+        presetId: parsed.presetId ?? 'white-clean'
+      }
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  
+  return { colors: { ...LIYA_AI_ENV_VUEJS_DEFAULT_COLORS }, presetId: 'white-clean' }
+}
+
+const liyaAiEnvVuejsInitialState = liyaAiEnvVuejsGetInitialColors()
+const liyaAiEnvVuejsColors = ref<LiyaAiEnvVuejsAvatarColors>(liyaAiEnvVuejsInitialState.colors)
+const liyaAiEnvVuejsCurrentPresetId = ref<string | null>(liyaAiEnvVuejsInitialState.presetId)
 
 function liyaAiEnvVuejsLoadFromStorage(): void {
   if (typeof window === 'undefined' || !window.localStorage) return
@@ -119,6 +142,10 @@ function liyaAiEnvVuejsInit(): void {
 }
 
 export function useLiyaAiEnvVuejsAvatarColors() {
+  // Always sync with localStorage when composable is used
+  // This ensures colors are up-to-date even after HMR or widget re-open
+  liyaAiEnvVuejsLoadFromStorage()
+  
   return {
     // State
     colors: readonly(liyaAiEnvVuejsColors),

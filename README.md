@@ -38,7 +38,7 @@ import '@liyalabs/liya-ai-env-vuejs/style.css'
 const app = createApp(App)
 
 app.use(LiyaAiEnvVuejs, {
-  apiUrl: 'https://api.liya.ai',
+  apiUrl: 'https://app-X-ai.liyalabs.com', // Your assigned backend URL (see GAR section)
   apiKey: 'your-api-key',
   assistantId: 'your-assistant-id',
   assistantName: 'Öğretmen Liya',
@@ -354,6 +354,26 @@ The environment requires these API endpoints:
 - Edge 80+
 
 Requires WebGL 2.0 and Web Speech API support.
+
+## GAR (Global Application Router)
+
+Liya AI uses a distributed backend architecture. Each user is assigned to a specific backend instance.
+
+### Finding Your Backend URL
+
+Your backend URL is displayed in your Liya AI dashboard under **Settings > API Configuration**:
+
+```
+https://app-{X}-ai.liyalabs.com
+```
+
+Where `{X}` is your assigned instance number (1, 2, 3, etc.).
+
+| Instance | Backend URL |
+|----------|-------------|
+| 1 | `https://app-1-ai.liyalabs.com` |
+| 2 | `https://app-2-ai.liyalabs.com` |
+| 3 | `https://app-3-ai.liyalabs.com` |
 
 ## License
 

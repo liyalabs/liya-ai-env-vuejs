@@ -31,6 +31,7 @@ export default defineConfig({
         globals: {
           vue: 'Vue'
         },
+        exports: 'named',
         assetFileNames: (assetInfo) => {
           if (assetInfo.name === 'style.css') {
             return 'liya-ai-env-vuejs.css'

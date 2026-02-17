@@ -442,6 +442,9 @@ async function liyaAiEnvVuejsLoadAvatarModel(url: string): Promise<void> {
           }
 
           liyaAiEnvVuejsScene!.add(liyaAiEnvVuejsAvatarModel)
+          
+          // Emit loaded event after avatar is fully loaded and meshes are ready
+          emit('loaded')
           resolve()
         },
         undefined,

@@ -2143,4 +2143,125 @@ onUnmounted(() => {
   opacity: 0;
   transform: translateY(-10px) scale(0.95);
 }
+
+/* Mobile Responsive - Chat Panel */
+@media (max-width: 768px) {
+  .liya-ai-env-vuejs-chat-panel {
+    width: calc(100% - 24px);
+    max-width: 400px;
+    right: 12px;
+    bottom: 12px;
+    max-height: 45vh;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__messages {
+    max-height: 200px;
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__message p {
+    font-size: 13px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__input-form {
+    padding: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__input {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  .liya-ai-env-vuejs-status-indicator {
+    bottom: 12px;
+    left: 12px;
+    padding: 8px 12px;
+  }
+  
+  .liya-ai-env-vuejs-settings-panel {
+    max-height: 70vh;
+    overflow-y: auto;
+    right: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .liya-ai-env-vuejs-chat-panel {
+    width: 100%;
+    max-width: none;
+    right: 0;
+    bottom: 0;
+    max-height: 50vh;
+    border-radius: 16px 16px 0 0;
+    border-bottom: none;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__messages {
+    max-height: 180px;
+    padding: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__message {
+    padding: 8px 12px;
+    border-radius: 12px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__message p {
+    font-size: 12px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__role {
+    font-size: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__suggestion {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__input-form {
+    padding: 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__input {
+    padding: 10px 12px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+  }
+  
+  .liya-ai-env-vuejs-chat-panel__send-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .liya-ai-env-vuejs-status-indicator {
+    bottom: auto;
+    top: calc(60px + env(safe-area-inset-top, 0px));
+    left: 10px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .liya-ai-env-vuejs-settings-panel {
+    width: calc(100vw - 20px);
+    max-width: 280px;
+    right: 10px;
+    top: calc(60px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* iOS Safe Area Support */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .liya-ai-env-vuejs-chat-panel__input-form {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+}
 </style>
