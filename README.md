@@ -2,6 +2,31 @@
 
 Virtual Classroom Environment with Full-Body AI Avatar for Vue.js 3 - Interactive teaching experience with lip-sync and gestures.
 
+[![npm version](https://img.shields.io/npm/v/@liyalabs/liya-ai-env-vuejs.svg)](https://www.npmjs.com/package/@liyalabs/liya-ai-env-vuejs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **[Live Demo →](https://ai.liyalabs.com)** &nbsp;|&nbsp; **[Website →](https://liyalabs.com)**
+
+## Screenshots
+
+### Virtual Classroom
+
+| Desktop | Mobile |
+|---------|--------|
+| ![Classroom Desktop](screenshots/classroom-desktop.png) | ![Classroom Mobile](screenshots/classroom-mobile.png) |
+
+### Avatar Teaching
+
+| Speaking & Gestures | Lip-sync Close-up |
+|---------------------|--------------------|
+| ![Avatar Speaking](screenshots/avatar-speaking.png) | ![Avatar Gestures](screenshots/avatar-gestures.png) |
+
+### Modal & Standalone Modes
+
+| Modal Fullscreen | Standalone Page |
+|------------------|----------------|
+| ![Modal Mode](screenshots/modal-mode.png) | ![Standalone Mode](screenshots/standalone-mode.png) |
+
 ## Features
 
 - 🏫 **3D Virtual Classroom** - Immersive classroom environment with perspective
@@ -375,6 +400,20 @@ Where `{X}` is your assigned instance number (1, 2, 3, etc.).
 | 2 | `https://app-2-ai.liyalabs.com` |
 | 3 | `https://app-3-ai.liyalabs.com` |
 
+## Live Demo
+
+See the virtual classroom in action:
+
+- **Full Platform**: [ai.liyalabs.com](https://ai.liyalabs.com) — Create a classroom-type assistant and experience the virtual environment
+- **Website**: [liyalabs.com](https://liyalabs.com) — Learn more about Liya AI capabilities
+
 ## License
 
 MIT © Liya Labs
+
+## Support
+
+- 🌐 Website: [liyalabs.com](https://liyalabs.com)
+- 📖 Documentation: [docs.liyalabs.com](https://docs.liyalabs.com)
+- 🐛 Issues: [GitHub Issues](https://github.com/liyalabs/liya-ai-env/issues)
+- 📧 Email: support@liyalabs.com

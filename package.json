@@ -1,6 +1,6 @@
 {
   "name": "@liyalabs/liya-ai-env-vuejs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Virtual Classroom Environment with Full-Body AI Avatar for Vue.js - Interactive teaching experience with lip-sync and gestures",
   "type": "module",
   "main": "./dist/liya-ai-env-vuejs.umd.cjs",
@@ -40,7 +40,7 @@
     "vite": "^6.2.0",
     "vite-plugin-dts": "^4.5.0",
     "vue": "^3.5.0",
-    "vue-tsc": "^2.2.0"
+    "vue-tsc": "^2.2.12"
   },
   "keywords": [
     "vue",
