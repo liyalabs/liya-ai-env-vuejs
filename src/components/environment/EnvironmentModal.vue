@@ -491,10 +491,13 @@ async function liyaAiEnvVuejsLoadSceneBackground(): Promise<void> {
   } catch (error) { /* will use default programmatic environment as fallback */ }
 }
 
-// Watch for transcript changes
-watch(transcript, (newTranscript) => {
-  if (newTranscript && !isRecording.value) {
-    liyaAiEnvVuejsHandleSendMessage(newTranscript)
+// Watch for transcript changes — send message when recording stops and transcript is available
+// Note: onresult fires while isRecording is still true, then onend sets isRecording to false
+// So we need to watch isRecording becoming false AND transcript having a value
+watch(isRecording, (recording, wasRecording) => {
+  // When recording stops (was true, now false) and we have a transcript, send it
+  if (wasRecording && !recording && transcript.value) {
+    liyaAiEnvVuejsHandleSendMessage(transcript.value)
   }
 })
 
@@ -1468,7 +1471,8 @@ onUnmounted(() => {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  z-index: 10;
+  z-index: 20;
+  pointer-events: auto;
 }
 
 .liya-ai-env-vuejs-status-indicator__dot {

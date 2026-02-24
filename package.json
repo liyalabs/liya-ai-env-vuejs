@@ -1,6 +1,6 @@
 {
   "name": "@liyalabs/liya-ai-env-vuejs",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Virtual Classroom Environment with Full-Body AI Avatar for Vue.js - Interactive teaching experience with lip-sync and gestures",
   "type": "module",
   "main": "./dist/liya-ai-env-vuejs.umd.cjs",

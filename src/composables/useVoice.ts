@@ -84,10 +84,12 @@ export function useLiyaAiEnvVuejsVoice() {
     (window as unknown as { SpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).SpeechRecognition ||
     (window as unknown as { webkitSpeechRecognition?: LiyaAiEnvVuejsSpeechRecognitionConstructor }).webkitSpeechRecognition
 
-  // iOS Safari and Opera do NOT reliably support SpeechRecognition API
+  // Detect platform for UX hints (not for blocking)
   liyaAiEnvVuejsIsIOS.value = liyaAiEnvVuejsDetectIOS()
   const liyaAiEnvVuejsIsOpera = liyaAiEnvVuejsDetectOpera()
-  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI && !liyaAiEnvVuejsIsIOS.value && !liyaAiEnvVuejsIsOpera
+  // Allow SpeechRecognition on iOS/Safari if the API is available (iPadOS 16+, macOS Ventura+)
+  // Only block Opera which silently fails
+  liyaAiEnvVuejsIsSupported.value = !!SpeechRecognitionAPI && !liyaAiEnvVuejsIsOpera
 
   // Check current microphone permission status
   async function liyaAiEnvVuejsCheckMicPermission(): Promise<'prompt' | 'granted' | 'denied'> {
@@ -108,8 +110,9 @@ export function useLiyaAiEnvVuejsVoice() {
   }
 
   // Request microphone permission early (on widget open)
+  // Works on ALL platforms including iOS Safari — mic permission is independent of SpeechRecognition
   async function liyaAiEnvVuejsRequestMicPermission(): Promise<boolean> {
-    if (!liyaAiEnvVuejsIsSupported.value) {
+    if (typeof navigator === 'undefined' || !navigator.mediaDevices) {
       return false
     }
     try {
@@ -139,8 +142,12 @@ export function useLiyaAiEnvVuejsVoice() {
       }
     }
 
-    liyaAiEnvVuejsRecognition.onerror = (_event: LiyaAiEnvVuejsSpeechRecognitionErrorEvent) => {
+    liyaAiEnvVuejsRecognition.onerror = (event: LiyaAiEnvVuejsSpeechRecognitionErrorEvent) => {
       liyaAiEnvVuejsIsRecording.value = false
+      // If SpeechRecognition fails on this platform, mark as unsupported for future attempts
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'language-not-supported') {
+        liyaAiEnvVuejsIsSupported.value = false
+      }
     }
 
     liyaAiEnvVuejsRecognition.onend = () => {
@@ -149,7 +156,7 @@ export function useLiyaAiEnvVuejsVoice() {
   }
 
   function liyaAiEnvVuejsStartRecording(): void {
-    if (!liyaAiEnvVuejsIsSupported.value) {
+    if (!SpeechRecognitionAPI) {
       return
     }
 
@@ -162,16 +169,17 @@ export function useLiyaAiEnvVuejsVoice() {
       try {
         liyaAiEnvVuejsRecognition.start()
         
-        // Opera workaround: recognition.start() may silently fail.
-        // If recording hasn't actually started within 3s, reset and log.
-        if (liyaAiEnvVuejsDetectOpera()) {
-          setTimeout(() => {
-            if (!liyaAiEnvVuejsIsRecording.value) return
-            // If onresult never fires, the recognition may have silently failed
-          }, 3000)
-        }
+        // Safari/iOS workaround: recognition.start() may silently fail.
+        // If no result within 8s, reset recording state.
+        setTimeout(() => {
+          if (liyaAiEnvVuejsIsRecording.value && !liyaAiEnvVuejsTranscript.value) {
+            // Still recording but no transcript — may have silently failed
+          }
+        }, 8000)
       } catch (err) {
         liyaAiEnvVuejsIsRecording.value = false
+        // If start() throws, this platform doesn't support SpeechRecognition
+        liyaAiEnvVuejsIsSupported.value = false
       }
     }
   }
@@ -179,7 +187,16 @@ export function useLiyaAiEnvVuejsVoice() {
   function liyaAiEnvVuejsStopRecording(): void {
     if (liyaAiEnvVuejsRecognition && liyaAiEnvVuejsIsRecording.value) {
       liyaAiEnvVuejsRecognition.stop()
-      liyaAiEnvVuejsIsRecording.value = false
+      // Do NOT set isRecording = false here!
+      // Browser will fire onresult (transcript) → onend (isRecording = false) in order.
+      // Setting it here causes the watch to trigger before transcript is available.
+      
+      // Safety fallback: if onend never fires within 3s, force reset
+      setTimeout(() => {
+        if (liyaAiEnvVuejsIsRecording.value) {
+          liyaAiEnvVuejsIsRecording.value = false
+        }
+      }, 3000)
     }
   }
 

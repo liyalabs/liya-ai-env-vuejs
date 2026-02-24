@@ -278,10 +278,13 @@ onMounted(async () => {
   }
 })
 
-// Watch for transcript changes
-watch(transcript, (newTranscript) => {
-  if (newTranscript && !isRecording.value) {
-    liyaAiEnvVuejsHandleSendMessage(newTranscript)
+// Watch for transcript changes — send message when recording stops and transcript is available
+// Note: onresult fires while isRecording is still true, then onend sets isRecording to false
+// So we need to watch isRecording becoming false AND transcript having a value
+watch(isRecording, (recording, wasRecording) => {
+  // When recording stops (was true, now false) and we have a transcript, send it
+  if (wasRecording && !recording && transcript.value) {
+    liyaAiEnvVuejsHandleSendMessage(transcript.value)
   }
 })
 
