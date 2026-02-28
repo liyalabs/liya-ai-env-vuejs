@@ -259,7 +259,8 @@ export function useLiyaAiEnvVuejsEnvironment() {
             id: `msg-${Date.now()}`,
             content: messageContent,
             role: 'assistant',
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            media: response.media,
           })
         }
 

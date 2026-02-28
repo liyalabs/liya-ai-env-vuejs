@@ -155,6 +155,7 @@ export declare interface LiyaAiEnvVuejsChatResponse {
     presentation_result?: LiyaAiEnvVuejsPresentationResult;
     suggestions?: string[];
     metadata?: Record<string, any>;
+    media?: LiyaAiEnvVuejsMediaItem[];
 }
 
 export declare interface LiyaAiEnvVuejsClassroomConfig {
@@ -385,12 +386,20 @@ export declare function liyaAiEnvVuejsIsSupportedLocale(locale: string): locale 
 
 declare function liyaAiEnvVuejsLoadModel(url: string, scene: THREE_2.Scene): Promise<void>;
 
+declare interface LiyaAiEnvVuejsMediaItem {
+    type: 'image' | 'video';
+    url: string;
+    alt?: string;
+    source?: string;
+}
+
 export declare interface LiyaAiEnvVuejsMessage {
     id: string;
     content: string;
     role: 'user' | 'assistant';
     created_at: string;
     response_time?: number;
+    media?: LiyaAiEnvVuejsMediaItem[];
 }
 
 /**
@@ -733,6 +742,12 @@ export declare function useLiyaAiEnvVuejsEnvironment(): {
     role: "user" | "assistant";
     created_at: string;
     response_time?: number | undefined;
+    media?: {
+    type: "image" | "video";
+    url: string;
+    alt?: string | undefined;
+    source?: string | undefined;
+    }[] | undefined;
     }[]>;
     visemes: ComputedRef<    {
     time: number;

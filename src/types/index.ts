@@ -197,6 +197,14 @@ export interface LiyaAiEnvVuejsChatResponse {
   presentation_result?: LiyaAiEnvVuejsPresentationResult
   suggestions?: string[]
   metadata?: Record<string, any>
+  media?: LiyaAiEnvVuejsMediaItem[]
+}
+
+export interface LiyaAiEnvVuejsMediaItem {
+  type: 'image' | 'video'
+  url: string
+  alt?: string
+  source?: string
 }
 
 export interface LiyaAiEnvVuejsMessage {
@@ -205,6 +213,7 @@ export interface LiyaAiEnvVuejsMessage {
   role: 'user' | 'assistant'
   created_at: string
   response_time?: number
+  media?: LiyaAiEnvVuejsMediaItem[]
 }
 
 // ============================================================================

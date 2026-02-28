@@ -371,11 +371,79 @@ function liyaAiEnvVuejsParseSuggestions(content: string): string[] {
   return []
 }
 
+// Media item interface
+interface LiyaAiEnvVuejsMediaItem {
+  type: 'image' | 'video'
+  url: string
+  alt: string
+}
+
+// Media preview state
+const liyaAiEnvVuejsMediaPreview = ref({
+  show: false,
+  type: 'image' as 'image' | 'video',
+  url: '',
+  alt: ''
+})
+
+// Media loading states: url -> 'loading' | 'loaded' | 'error'
+const liyaAiEnvVuejsMediaLoadStates = ref<Record<string, string>>({})
+
+// Extract media from content
+function liyaAiEnvVuejsExtractMedia(content: string, backendMedia?: any[]): { cleanText: string; media: LiyaAiEnvVuejsMediaItem[] } {
+  const media: LiyaAiEnvVuejsMediaItem[] = []
+  
+  // Backend media dizisi varsa onu kullan
+  if (backendMedia && Array.isArray(backendMedia) && backendMedia.length > 0) {
+    for (const m of backendMedia) {
+      media.push({ type: m.type || 'image', url: m.url, alt: m.alt || (m.type === 'video' ? 'Video' : 'Görsel') })
+    }
+    // Markdown'ları temizle
+    const cleanText = content
+      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '')
+      .replace(/\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:mp4|webm|mov|MP4|WEBM|MOV))\)/g, '')
+      .trim()
+    return { cleanText, media }
+  }
+  
+  // Fallback: Markdown'dan parse
+  // Images: ![alt](url)
+  const imgRegex = /!\[([^\]]*)\]\(([^)]+)\)/g
+  let match
+  while ((match = imgRegex.exec(content)) !== null) {
+    media.push({ type: 'image', url: match[2], alt: match[1] || 'Görsel' })
+  }
+  
+  // Videos: [text](url.mp4)
+  const vidRegex = /\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:mp4|webm|mov|MP4|WEBM|MOV))\)/gi
+  while ((match = vidRegex.exec(content)) !== null) {
+    media.push({ type: 'video', url: match[2], alt: match[1] || 'Video' })
+  }
+  
+  const cleanText = content
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '')
+    .replace(/\[([^\]]*)\]\((https?:\/\/[^)]+\.(?:mp4|webm|mov|MP4|WEBM|MOV))\)/gi, '')
+    .trim()
+  
+  return { cleanText, media }
+}
+
+// Open media preview
+function liyaAiEnvVuejsOpenMediaPreview(media: LiyaAiEnvVuejsMediaItem): void {
+  liyaAiEnvVuejsMediaPreview.value = {
+    show: true,
+    type: media.type,
+    url: media.url,
+    alt: media.alt
+  }
+}
+
 // Computed messages with parsed content
 interface LiyaAiEnvVuejsParsedMessage {
   role: 'user' | 'assistant'
   content: string
   suggestions: string[]
+  media: LiyaAiEnvVuejsMediaItem[]
 }
 
 const liyaAiEnvVuejsParsedMessages = computed<LiyaAiEnvVuejsParsedMessage[]>(() => {
@@ -384,10 +452,16 @@ const liyaAiEnvVuejsParsedMessages = computed<LiyaAiEnvVuejsParsedMessage[]>(() 
 
   const parsed = messages.value.map(msg => {
     const apiSuggestions = msg.role === 'assistant' ? liyaAiEnvVuejsParseSuggestions(msg.content) : []
+    const formattedContent = liyaAiEnvVuejsFormatMessageContent(msg.content)
+    
+    // Extract media from content (backend media veya markdown fallback)
+    const mediaResult = liyaAiEnvVuejsExtractMedia(formattedContent, msg.media)
+    
     return {
       role: msg.role,
-      content: liyaAiEnvVuejsFormatMessageContent(msg.content),
-      suggestions: apiSuggestions
+      content: mediaResult.cleanText,
+      suggestions: apiSuggestions,
+      media: mediaResult.media
     }
   })
   
@@ -974,7 +1048,56 @@ onUnmounted(() => {
                     <span class="liya-ai-env-vuejs-chat-panel__role">
                       {{ msg.role === 'user' ? liyaAiEnvVuejsT.chat.userRole : liyaAiEnvVuejsResolvedName }}
                     </span>
-                    <p>{{ msg.content }}</p>
+                    <p v-if="msg.content">{{ msg.content }}</p>
+                    
+                    <!-- Media thumbnails (images) -->
+                    <div 
+                      v-for="(media, mIdx) in msg.media" 
+                      :key="mIdx"
+                      class="liya-ai-env-vuejs-chat-panel__media"
+                      @click="liyaAiEnvVuejsOpenMediaPreview(media)"
+                    >
+                      <!-- Image with skeleton loader -->
+                      <template v-if="media.type === 'image'">
+                        <div 
+                          v-if="!liyaAiEnvVuejsMediaLoadStates[media.url] || liyaAiEnvVuejsMediaLoadStates[media.url] === 'loading'"
+                          class="liya-ai-env-vuejs-chat-panel__media-skeleton"
+                        >
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21,15 16,10 5,21"/>
+                          </svg>
+                        </div>
+                        <img 
+                          :src="media.url" 
+                          :alt="media.alt"
+                          class="liya-ai-env-vuejs-chat-panel__media-img"
+                          :class="{ 'liya-ai-env-vuejs-chat-panel__media-img--hidden': liyaAiEnvVuejsMediaLoadStates[media.url] !== 'loaded' }"
+                          loading="lazy"
+                          @load="liyaAiEnvVuejsMediaLoadStates[media.url] = 'loaded'"
+                          @error="liyaAiEnvVuejsMediaLoadStates[media.url] = 'error'"
+                        />
+                        <div v-if="liyaAiEnvVuejsMediaLoadStates[media.url] === 'error'" class="liya-ai-env-vuejs-chat-panel__media-error">
+                          ⚠️
+                        </div>
+                      </template>
+                      <!-- Video thumbnail -->
+                      <div 
+                        v-else-if="media.type === 'video'"
+                        class="liya-ai-env-vuejs-chat-panel__media-video"
+                      >
+                        <video 
+                          :src="media.url + '#t=0.001'" 
+                          preload="metadata" 
+                          muted 
+                          playsinline 
+                          webkit-playsinline
+                        />
+                        <div class="liya-ai-env-vuejs-chat-panel__play-icon">▶</div>
+                      </div>
+                    </div>
+                    
                     <!-- Suggestions as clickable links -->
                     <div v-if="msg.suggestions.length > 0" class="liya-ai-env-vuejs-chat-panel__suggestions">
                       <button 
@@ -1013,6 +1136,47 @@ onUnmounted(() => {
             </template>
           </div>
         </div>
+      </div>
+    </Transition>
+  </Teleport>
+  
+  <!-- Media Preview Modal (z-index > environment modal) -->
+  <Teleport to="body">
+    <Transition name="liya-ai-env-vuejs-fade">
+      <div 
+        v-if="liyaAiEnvVuejsMediaPreview.show" 
+        class="liya-ai-env-vuejs-media-preview-overlay"
+        @click.self="liyaAiEnvVuejsMediaPreview.show = false"
+      >
+        <button 
+          class="liya-ai-env-vuejs-media-preview-close" 
+          @click="liyaAiEnvVuejsMediaPreview.show = false"
+        >
+          ✕
+        </button>
+        <img 
+          v-if="liyaAiEnvVuejsMediaPreview.type === 'image'" 
+          :src="liyaAiEnvVuejsMediaPreview.url" 
+          :alt="liyaAiEnvVuejsMediaPreview.alt"
+          class="liya-ai-env-vuejs-media-preview-content"
+        />
+        <video 
+          v-else 
+          :src="liyaAiEnvVuejsMediaPreview.url" 
+          controls 
+          autoplay 
+          playsinline 
+          webkit-playsinline
+          class="liya-ai-env-vuejs-media-preview-content"
+        />
+        <a 
+          :href="liyaAiEnvVuejsMediaPreview.url" 
+          download 
+          target="_blank"
+          class="liya-ai-env-vuejs-media-preview-download"
+        >
+          İndir
+        </a>
       </div>
     </Transition>
   </Teleport>
@@ -2267,5 +2431,147 @@ onUnmounted(() => {
   .liya-ai-env-vuejs-chat-panel__input-form {
     padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   }
+}
+
+/* Media Thumbnail Styles */
+.liya-ai-env-vuejs-chat-panel__media {
+  margin-top: 6px;
+  cursor: pointer;
+}
+
+.liya-ai-env-vuejs-chat-panel__media-skeleton {
+  width: 150px;
+  height: 100px;
+  border-radius: 8px;
+  background: linear-gradient(110deg, rgba(255,255,255,0.05) 8%, rgba(255,255,255,0.12) 18%, rgba(255,255,255,0.05) 33%);
+  background-size: 200% 100%;
+  animation: liya-ai-env-vuejs-shimmer 1.5s infinite;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes liya-ai-env-vuejs-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.liya-ai-env-vuejs-chat-panel__media-img {
+  max-width: min(200px, 100%);
+  max-height: 150px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: border-color 0.2s;
+}
+
+.liya-ai-env-vuejs-chat-panel__media-img--hidden {
+  display: none !important;
+}
+
+.liya-ai-env-vuejs-chat-panel__media-img:hover {
+  border-color: rgba(99,102,241,0.5);
+}
+
+.liya-ai-env-vuejs-chat-panel__media-error {
+  font-size: 12px;
+  color: rgba(255,255,255,0.5);
+}
+
+.liya-ai-env-vuejs-chat-panel__media-video {
+  position: relative;
+  max-width: min(200px, 100%);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.liya-ai-env-vuejs-chat-panel__media-video video {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  background: #000;
+  display: block;
+}
+
+.liya-ai-env-vuejs-chat-panel__play-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.3);
+  color: white;
+  font-size: 20px;
+}
+
+/* Media Preview Overlay (z-index > environment modal) */
+.liya-ai-env-vuejs-media-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: rgba(0,0,0,0.9);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.liya-ai-env-vuejs-media-preview-content {
+  max-width: 90vw;
+  max-height: 80vh;
+  border-radius: 12px;
+  object-fit: contain;
+}
+
+.liya-ai-env-vuejs-media-preview-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.1);
+  color: white;
+  font-size: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.liya-ai-env-vuejs-media-preview-close:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.liya-ai-env-vuejs-media-preview-download {
+  padding: 10px 24px;
+  background: rgba(99,102,241,0.9);
+  color: white;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.liya-ai-env-vuejs-media-preview-download:hover {
+  background: rgba(99,102,241,1);
+}
+
+/* Fade transition for media preview */
+.liya-ai-env-vuejs-fade-enter-active,
+.liya-ai-env-vuejs-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.liya-ai-env-vuejs-fade-enter-from,
+.liya-ai-env-vuejs-fade-leave-to {
+  opacity: 0;
 }
 </style>
